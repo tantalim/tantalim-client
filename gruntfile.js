@@ -5,52 +5,38 @@ module.exports = function (grunt) {
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
         watch: {
-            jade: {
-                files: ['app/views/**'],
-                options: {
-                    livereload: true
-                }
-            },
             js: {
-                files: ['gruntfile.js', 'server.js', 'app/**/*.js',
+                files: [
+                    'gruntfile.js',
                     'public/js/common/**/*.js',
                     'public/js/mobile/**/*.js',
                     'public/js/page/**/*.js',
-                    '../test/**/*.js'],
-                tasks: ['concat'],
-                options: {
-                    livereload: true
-                }
-            },
-            html: {
-                files: ['public/views/**'],
-                options: {
-                    livereload: true
-                }
-            },
-            css: {
-                files: ['public/css/**'],
+                    'test/**/*.js'
+                ],
+                tasks: ['compile'],
                 options: {
                     livereload: true
                 }
             },
             karma: {
-                files: ['public/js/page/**/*.js', 'test/karma/**/*.js'],
+                files: [
+                    'public/js/common/**/*.js',
+                    'public/js/mobile/**/*.js',
+                    'public/js/page/**/*.js',
+                    'test/karma/**/*.js'
+                ],
                 options: {
                     livereload: true
                 },
-                tasks: ['karma:unit:run']
+                tasks: ['jshint', 'karma:unit:run']
             }
         },
         jshint: {
             all: {
                 src: [
                     'gruntfile.js',
-                    'main.js',
-                    'app/**/*.js',
-                    'public/js/page/**/*.js',
-                    '../test/karma/**/*.js',
-                    '../test/mocha/**/*.js'
+                    'public/js/page/**/*.js'
+                    // 'test/**/*.js'
                 ],
                 options: {
                     jshintrc: true
@@ -91,12 +77,6 @@ module.exports = function (grunt) {
                 }
             }
         },
-        concurrent: {
-            tasks: ['watch'],
-            options: {
-                logConcurrentOutput: true
-            }
-        },
         karma: {
             unit: {
                 // for Development
@@ -123,7 +103,7 @@ module.exports = function (grunt) {
     grunt.option('force', true);
 
     //Default task(s).
-    grunt.registerTask('default', ['compile', 'concurrent']);
+    grunt.registerTask('default', ['compile', 'watch']);
     grunt.registerTask('compile', ['jshint', 'concat', 'uglify']);
 
     //Test task. //
