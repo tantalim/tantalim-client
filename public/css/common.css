@@ -1,0 +1,98 @@
+.nav, .pagination, .carousel, .panel-title a {
+    cursor: pointer;
+}
+
+.navbar .nav > li > a.brand {
+    padding-left: 20px;
+    margin-left: 0
+}
+
+.content {
+    margin-top: 70px;
+    width: 100%;
+}
+
+/*footer {*/
+/*position: fixed;*/
+/*left: 0px;*/
+/*bottom: 0px;*/
+/*height: 30px;*/
+/*width: 100%;*/
+/*background: #ddd;*/
+/*-webkit-box-shadow: 0 8px 6px 6px black;*/
+/*-moz-box-shadow: 0 8px 6px 6px black;*/
+/*box-shadow: 0 8px 6px 6px black*/
+/*}*/
+
+/*footer p {*/
+/*padding: 5px 0 12px 10px*/
+/*}*/
+
+/*#toc {*/
+/*background-color: #EEE;*/
+/*}*/
+
+#toc button {
+    text-align: left;
+}
+
+#server-status, #server-error {
+    position: absolute;
+    padding: 2px 10px;
+    left: 0;
+    top: 51px;
+    width: 100%;
+    border-radius: 0;
+    margin: 0;
+    z-index: 100;
+    font-size: 0.9em;
+}
+
+/*tr.success .text-edit {*/
+/*display: block;*/
+/*padding: 8px;*/
+/*border: 0px;*/
+/*}*/
+
+.text-edit {
+    display: none;
+    width: 100%;
+}
+
+/*tr.success .text-view {*/
+/*display: none;*/
+/*}*/
+
+/*.text-view {*/
+/*display: block;*/
+/*}*/
+
+/*tr.success td.text-display {*/
+/*padding: 0px;*/
+/*}*/
+
+div.smart-select {
+    position: absolute;
+    height: 300px;
+    overflow-y: scroll;
+    z-index: 1;
+}
+
+#static-content {
+    margin-top: 20px;
+}
+
+.instance-count {
+    color: #777;
+    font-weight: bold;
+    font-size: 0.8em;
+}
+
+.tantalum-grid {
+    height: 400px;
+}
+
+/* Fixes for ng-grid */
+.ngColMenu label {
+    margin-right: 20px;
+}

@@ -10,6 +10,6 @@ $ cd tantalim-client
 # Register tantalim-server on your computer
 $ npm link
 $ cd ../sample-app
-# Create shortcut to tantalim-server
-$ npm link tantalim-server
+# Create shortcut to tantalim-client
+$ npm link tantalim-client
 ```
