@@ -1,6 +1,7 @@
 'use strict';
 // Source: public/js/mobile/_app.js
-angular.module('tantalim.mobile', ['tantalim.common', 'ngRoute', 'mobile-angular-ui', 'mobile-angular-ui.touch', 'mobile-angular-ui.scrollable']);
+// Not sure if they were needed, but removed... 'mobile-angular-ui.touch', 'mobile-angular-ui.scrollable'
+angular.module('tantalim.mobile', ['tantalim.common', 'ngRoute', 'mobile-angular-ui']);
 
 // Source: public/js/mobile/main.js
 angular.module('tantalim.mobile')
