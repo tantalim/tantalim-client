@@ -1,0 +1,127 @@
+<div class="app" data-ng-controller="PageController">
+    <!-- Navbars -->
+    <div class="navbar navbar-app navbar-absolute-top">
+        <div class="navbar-brand navbar-brand-center">
+            <span>List Tables</span>
+        </div>
+
+        <div class="btn-group pull-left">
+            <div class="btn btn-navbar sidebar-toggle" data-ng-click="toggle('mainSidebar')">
+                <i class="fa fa-bars"></i> Menu
+            </div>
+        </div>
+    </div>
+
+    <div class="navbar navbar-app navbar-absolute-bottom">
+        <div class="btn-group pull-left">
+            <div class="btn btn-navbar" data-ng-click="">
+                <i class="fa fa-plus"></i> New
+            </div>
+        </div>
+
+        <!--<div class="alert alert-warning" data-ng-show="serverStatus" data-ng-bind="serverStatus"></div>-->
+        <!--<div class="alert alert-danger" data-ng-show="serverError" data-ng-bind="serverError"></div>-->
+    </div>
+
+    <div class="app-body" ng-class="{loading: loading}">
+        <div ng-show="loading" class="app-content-loading">
+            <i class="fa fa-spinner fa-spin loading-spinner"></i>
+        </div>
+
+        <div id="static-content" data-ng-show="staticContent" data-ng-bind="staticContent"></div>
+
+        <div id="list-ListTables" class="app-content" data-ng-show="!loading && currentPage == 'list-ListTables'">
+            <div class="content-expanded" data-ng-hide="current.sets.ListTables.rows.length">
+                No Data Found
+            </div>
+            <div class="scrollable">
+                <div class="scrollable-content">
+                    <div class="list-group">
+                        <a href="#/detail/ListTables/{{row.id}}" class="list-group-item"
+                           data-ng-repeat="row in current.sets.ListTables.rows">
+
+                            <span data-ng-bind="row.data.TableName"></span>
+
+                            <i class="fa fa-chevron-right pull-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="detail-ListTables" class="app-content" data-ng-show="!loading && currentPage == 'detail-ListTables'"
+             ng-swipe-right="current.sets.ListTables.movePrevious()"
+             ng-swipe-left="current.sets.ListTables.moveNext()">
+            <div class="scrollable">
+                <div class="scrollable-content">
+                    <form>
+                        <div class="panel" title="List Tables">
+                            <div class="panel-body">
+
+                                <div class="form-group">
+
+                                    <label for="ListTables-TableTableID">ID</label>
+                                    <input type="text" class="form-control" id="ListTables-TableTableID"
+                                           data-ng-model="current.instances.ListTables.data.TableTableID"
+                                           ng-change="rowChanged(current.instances.ListTables)"
+                                           disabled
+                                            >
+                                </div>
+
+                                <div class="form-group">
+
+                                    <label for="ListTables-TableName">Table Name</label>
+                                    <input type="text" class="form-control" id="ListTables-TableName"
+                                           data-ng-model="current.instances.ListTables.data.TableName"
+                                           ng-change="rowChanged(current.instances.ListTables)"
+
+                                            >
+                                </div>
+
+                                <div class="form-group">
+
+                                    <label for="ListTables-TableSQL">SQL</label>
+                                    <input type="text" class="form-control" id="ListTables-TableSQL"
+                                           data-ng-model="current.instances.ListTables.data.TableSQL"
+                                           ng-change="rowChanged(current.instances.ListTables)"
+
+                                            >
+                                </div>
+
+                                <div class="form-group">
+
+                                    <label for="ListTables-TableModuleID">ModuleID</label>
+                                    <input type="text" class="form-control" id="ListTables-TableModuleID"
+                                           data-ng-model="current.instances.ListTables.data.TableModuleID"
+                                           ng-change="rowChanged(current.instances.ListTables)"
+                                           disabled
+                                            >
+                                </div>
+
+                                <div class="form-group">
+
+                                    <label for="ListTables-TableModuleName">Module</label>
+                                    <input type="text" class="form-control" id="ListTables-TableModuleName"
+                                           data-ng-model="current.instances.ListTables.data.TableModuleName"
+                                           ng-change="rowChanged(current.instances.ListTables)"
+
+                                            >
+                                </div>
+
+                                <div class="form-group">
+
+                                    <label for="ListTables-TableModuleCode">Module Code</label>
+                                    <input type="text" class="form-control" id="ListTables-TableModuleCode"
+                                           data-ng-model="current.instances.ListTables.data.TableModuleCode"
+                                           ng-change="rowChanged(current.instances.ListTables)"
+                                           disabled
+                                            >
+                                </div>
+
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
