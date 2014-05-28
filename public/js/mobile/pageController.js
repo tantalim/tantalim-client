@@ -50,11 +50,15 @@ angular.module('tantalim.mobile')
         if ($routeParams.subPage) {
             if ($routeParams.id) {
                 $scope.currentPage = 'detail-' + $routeParams.subPage;
+                ModelCursor.action.choose($routeParams.subPage, $routeParams.id);
             } else {
                 $scope.currentPage = 'list-' + $routeParams.subPage;
             }
         }
-        console.info($scope.currentPage);
+
+        $scope.isActive = function (menuItem) {
+            return menuItem === Global.pageName;
+        }
 
         $scope.rowChanged = function (thisInstance) {
             ModelCursor.change(thisInstance);

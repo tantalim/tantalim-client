@@ -5,13 +5,16 @@ angular.module('tantalim.mobile')
         var pageName = window.pageName;
         $routeProvider.
             when('/', {
-                templateUrl: '/m/' + pageName + '/list'
+                templateUrl: '/m/' + pageName + '/list',
+                controller: 'PageController'
             }).
             when('/detail/:subPage/:id', {
-                templateUrl: '/m/' + pageName + '/list'
+                templateUrl: '/m/' + pageName + '/detail',
+                controller: 'PageController'
             }).
             when('/list/:subPage', {
-                templateUrl: '/m/' + pageName + '/list'
+                templateUrl: '/m/' + pageName + '/list',
+                controller: 'PageController'
             }).
             otherwise({
                 redirectTo: '/'

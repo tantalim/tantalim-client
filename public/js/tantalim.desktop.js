@@ -730,6 +730,11 @@ angular.module('tantalim.common')
                     moveToBottom: function () {
                         this.moveTo(this.rows.length - 1);
                     },
+                    findIndex: function (id) {
+                        return _.findIndex(this.rows, function(row) {
+                            return row.id == id;
+                        });
+                    },
                     delete: function (index) {
                         if (this.rows.length <= 0) {
                             return;
@@ -872,6 +877,11 @@ angular.module('tantalim.common')
                     delete: function (modelName, index) {
                         current.sets[modelName].delete(index);
                         self.dirty = true;
+                    },
+                    choose: function (modelName, id) {
+                        var index = current.sets[modelName].findIndex(id);
+                        console.info(modelName + ' moving to ' + id + ' @ ' + index);
+                        current.sets[modelName].moveTo(index);
                     },
                     select: function (modelName, index) {
                         current.sets[modelName].moveTo(index);
