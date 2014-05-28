@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>ListTables</title>
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimal-ui"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="yes"/>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+    <link href="/img/icons/favicon.ico" rel="shortcut icon" type="image/x-icon">
+
+    <!-- Angular JS -->
+    <script type="text/javascript" src="/lib/angular/angular.min.js"></script>
+    <script type="text/javascript" src="/lib/angular-route/angular-route.js"></script>
+    <!-- Mobile Angular UI -->
+    <link rel="stylesheet" href="/lib/mobile-angular-ui/dist/css/mobile-angular-ui-base.min.css">
+    <link rel="stylesheet" href="/lib/mobile-angular-ui/dist/css/mobile-angular-ui-desktop.min.css">
+    <script type="text/javascript" src="/lib/mobile-angular-ui/dist/js/mobile-angular-ui.min.js"></script>
+    <!-- Other -->
+    <script type="text/javascript" src="/lib/lodash/dist/lodash.min.js"></script>
+    <!-- Tantalim -->
+    <link rel="stylesheet" href="/css/mobile.css">
+    <!--<link rel="stylesheet" href="/assets/mobile.css">-->
+    <script type="text/javascript" src="/js/tantalim.mobile.js"></script>
+    <script type="text/javascript" src="/page-definition/ListTables"></script>
+    <script type="text/javascript">
+        window.pageName = 'ListTables';
+        window.user = {
+            username: 'trevorallred',
+            name: 'Trevor Allred (AUTO)'
+        };
+    </script>
+</head>
+<body ng-app="tantalim.mobile">
+
+<!-- Sidebars -->
+<div class="sidebar sidebar-left" toggleable parent-active-class="sidebar-left-in" id="mainSidebar">
+    <h1 class="app-name">Tantalim</h1>
+
+    <div class="scrollable">
+        <div class="scrollable-content">
+            <div class="list-group" toggle="off" bubble target="mainSidebar">
+                <a class="list-group-item" href="/m/ListTables">Tables <i class="fa fa-chevron-right pull-right"></i></a>
+                <a class="list-group-item" href="/m/BuildTable">Build Tables <i class="fa fa-chevron-right pull-right"></i></a>
+                <a class="list-group-item" href="/m/ListModels">Models <i class="fa fa-chevron-right pull-right"></i></a>
+                <a class="list-group-item" href="/m/ListPages">Pages <i class="fa fa-chevron-right pull-right"></i></a>
+                <a class="list-group-item" href="/m/Login">Login <i class="fa fa-chevron-right pull-right"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<ng-view></ng-view>
+</body>
+</html>

@@ -77,6 +77,20 @@ module.exports = function (grunt) {
                 }
             }
         },
+        nodemon: {
+            dev: {
+                script: 'mock_server/index.js',
+                options: {
+                    watch: ['mock_server']
+                }
+            }
+        },
+        concurrent: {
+            tasks: ['nodemon', 'watch'],
+            options: {
+                logConcurrentOutput: true
+            }
+        },
         karma: {
             unit: {
                 // for Development
@@ -96,6 +110,7 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-uglify');
     grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-karma');
+    grunt.loadNpmTasks('grunt-nodemon');
     grunt.loadNpmTasks('grunt-concurrent');
     grunt.loadNpmTasks('grunt-env');
 
@@ -105,6 +120,7 @@ module.exports = function (grunt) {
     //Default task(s).
     grunt.registerTask('default', ['compile', 'watch']);
     grunt.registerTask('compile', ['jshint', 'concat', 'uglify']);
+    grunt.registerTask('run', ['concurrent']);
 
     //Test task. //
     grunt.registerTask('test', ['env:test', 'karma:unit']);
