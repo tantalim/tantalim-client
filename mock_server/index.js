@@ -21,6 +21,10 @@ function mobile(res, file) {
 };
 
 function addRoutes() {
+    app.get('/', function (req, res) {
+        res.redirect('m/Home');
+    });
+
     app.get('/m/:pageName/list', function (req, res) {
         mobile(res, 'list');
     });
@@ -51,16 +55,11 @@ function addRoutes() {
 }
 
 app.configure(function () {
-    // Request body parsing middleware should be above methodOverride
     app.use(express.urlencoded());
     app.use(express.json());
     app.use(express.methodOverride());
-
-    // Routes should be at the last
     app.use(app.router);
-
     addRoutes();
-
     app.use(express.static(rootPath + '/../public'));
 });
 
