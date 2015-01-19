@@ -115,8 +115,7 @@ angular.module('ui.select', [])
                 ctrl.resetSearchInput = undefined; // Initialized inside uiSelect directive link function
                 ctrl.refreshDelay = undefined; // Initialized inside choices directive link function
 
-                ctrl.model = undefined; // Tantalum view
-                ctrl.displayField = undefined; // Tantalum field name
+                ctrl.model = undefined; // Tantalum model
 
                 var _searchInput = $element.querySelectorAll('input.ui-select-search');
                 if (_searchInput.length !== 1) {
@@ -288,8 +287,8 @@ angular.module('ui.select', [])
             }])
 
     .directive('uiSelect',
-        ['$document',
-            function ($document) {
+        ['$document', 'ModelCursor',
+            function ($document, ModelCursor) {
 
                 return {
                     restrict: 'EA',
@@ -306,17 +305,6 @@ angular.module('ui.select', [])
                         var $select = ctrls[0];
                         var ngModel = ctrls[1];
 
-                        console.info('uiSelect.link');
-                        $select.copyFields = function(item) {
-                            console.info($select.model);
-                            console.info(item);
-                            var copyFields = scope.$eval(attrs.tntCopy);
-                            console.info(copyFields);
-                            angular.forEach(copyFields, function(map){
-                                $select.model[map.to] = item.data[map.from];
-                            });
-                        };
-
                         attrs.$observe('disabled', function () {
                             // No need to use $eval() (thanks to ng-disabled) since we already get a boolean instead of a string
                             $select.disabled = attrs.disabled !== undefined ? attrs.disabled : false;
@@ -329,19 +317,13 @@ angular.module('ui.select', [])
                         });
 
                         scope.$watch('$select.selected', function (newValue, oldValue) {
-                            console.info('$select.selected');
-                            console.info(newValue);
-
                             if (ngModel.$viewValue !== newValue) {
-                                console.warn('it is different');
-                                console.info(attrs.tntModel);
-                                $select.model = scope.$eval(attrs.tntModel);
-                                console.info($select.model);
-
-                                $select.copyFields(newValue);
-//                                ngModel.$setViewValue($select.display());
-                            } else {
-                                console.warn('it is not different');
+                                var currentModel = scope.$eval(attrs.tntModel);
+                                var copyFields = scope.$eval(attrs.tntCopy);
+                                angular.forEach(copyFields, function(map){
+                                    currentModel.data[map.to] = newValue.data[map.from];
+                                });
+                                ModelCursor.change(currentModel);
                             }
                         });
 
@@ -450,15 +432,6 @@ angular.module('ui.select', [])
                 attrs.$observe('placeholder', function (placeholder) {
                     $select.placeholder = placeholder !== undefined ? placeholder : uiSelectConfig.placeholder;
                 });
-
-                $select.display = function() {
-                    if ($select.model) {
-                        var displayField = attrs.tntField;
-                        return $select.model[displayField];
-                    } else {
-                        return 'model is undefined';
-                    }
-                };
             }
         };
     }])
@@ -481,6 +454,6 @@ angular.module('ui.select', [])
 
 angular.module('ui.select').run(['$templateCache', function ($templateCache) {
     $templateCache.put('choices.tpl.html', '<ul class="ui-select-choices ui-select-choices-content dropdown-menu" role="menu" aria-labelledby="dLabel" ng-show="$select.items.length> 0"> <li class="ui-select-choices-row" ng-class="{active: $select.activeIndex===$index}"> <a href="javascript:void(0)" ng-transclude></a> </li> </ul> ');
-    $templateCache.put('match.tpl.html', '<button class="btn btn-default form-control ui-select-match" ng-hide="$select.open" ng-disabled="$select.disabled" ng-click="$select.activate()"> <span ng-hide="$select.display !==undefined" class="text-muted">{{$select.placeholder}}</span> <span ng-show="$select.display !==undefined">{{$select.display}}</span> <span class="caret"></span> </button> ');
+    $templateCache.put('match.tpl.html', '<button class="btn btn-default form-control ui-select-match" ng-hide="$select.open" ng-disabled="$select.disabled" ng-click="$select.activate()"> <span ng-hide="$select.selected !==undefined" class="text-muted">PLACEHOLDER</span> <span ng-show="$select.selected !==undefined">{{$select.selected}}</span> <span class="caret"></span> </button> ');
     $templateCache.put('select.tpl.html', '<div class="ui-select-bootstrap dropdown" ng-class="{open: $select.open}"> <div class="ui-select-match"></div> <input type="text" autocomplete="off" tabindex="" class="form-control ui-select-search" placeholder="{{$select.placeholder}}" ng-model="$select.search" ng-show="$select.open"> <div class="ui-select-choices"></div> </div> ');
 }]);

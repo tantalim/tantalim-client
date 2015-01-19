@@ -20,3 +20,10 @@
     margin-top: -25px;
 }
 
+button.form-control {
+    text-align: left;
+}
+
+button.form-control i {
+    float: right;
+}
