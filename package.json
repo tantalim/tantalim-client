@@ -2,9 +2,13 @@
   "name": "tantalim-client",
   "version": "0.0.1",
   "description": "Tantalim client-side files for a Java Script SOFEA web application",
+  "license": "GPLv3",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tantalim/tantalim-client.git"
+    "url": "https://github.com/tantalim/tantalim-client"
+  },
+  "bugs": {
+    "url": "https://github.com/tantalim/tantalim-client/issues"
   },
   "dependencies": {
   },
