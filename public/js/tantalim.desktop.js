@@ -1,6 +1,6 @@
 'use strict';
 // Source: public/js/page/_app.js
-angular.module('tantalim.desktop', ['tantalim.common', 'ngRoute', 'ui.bootstrap', 'ngGrid', 'ngSanitize', 'ui.select']);
+angular.module('tantalim.desktop', ['tantalim.common', 'ngRoute', 'ui.bootstrap', 'ngGrid', 'ngSanitize', 'tantalim.select']);
 
 // Source: public/js/page/keyboardManager.js
 angular.module('tantalim.desktop')
@@ -337,17 +337,6 @@ angular.module('tantalim.desktop')
         $scope.currentModel = ModelData.currentModel;
         Global.modelName = $scope.currentModel;
 
-        $scope.listSmartSelect = {};
-        $scope.runSmartSelect = function (sourceModel, modelName, queryValue) {
-            PageService.queryModelData(sourceModel, queryValue).then(function (d) {
-                $scope.listSmartSelect[sourceModel] = d.data;
-            });
-        };
-        $scope.chooseSmartSelect = function (modelName, copyFields, row) {
-            ModelCursor.current.instances[modelName].selectOption(row, copyFields);
-            ModelCursor.change(ModelCursor.current.instances[modelName]);
-        };
-
         $scope.rowChanged = function (thisInstance) {
             ModelCursor.change(thisInstance);
         };
@@ -588,12 +577,6 @@ angular.module('tantalim.common')
                         if (this.state === 'NO_CHANGE') {
                             this.state = 'UPDATED';
                         }
-                    },
-                    selectOption: function (row, copyFields) {
-                        var _self = this;
-                        _.forEach(copyFields, function (copyField) {
-                            _self.data[copyField.to] = row.data[copyField.from];
-                        });
                     }
                 };
 
@@ -862,10 +845,10 @@ angular.module('tantalim.common')
                     self.current = current;
                 },
                 dirty: false,
-                change: function (data) {
-                    if (data.state === 'NO_CHANGE' || data.state === 'CHILD_UPDATED') {
-                        data.state = 'UPDATED';
-                        markParentOfThisInstanceChanged(data);
+                change: function (instance) {
+                    if (instance.state === 'NO_CHANGE' || instance.state === 'CHILD_UPDATED') {
+                        instance.state = 'UPDATED';
+                        markParentOfThisInstanceChanged(instance);
                         self.dirty = true;
                     }
                 },

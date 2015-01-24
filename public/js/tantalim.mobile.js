@@ -224,12 +224,6 @@ angular.module('tantalim.common')
                         if (this.state === 'NO_CHANGE') {
                             this.state = 'UPDATED';
                         }
-                    },
-                    selectOption: function (row, copyFields) {
-                        var _self = this;
-                        _.forEach(copyFields, function (copyField) {
-                            _self.data[copyField.to] = row.data[copyField.from];
-                        });
                     }
                 };
 
@@ -498,10 +492,10 @@ angular.module('tantalim.common')
                     self.current = current;
                 },
                 dirty: false,
-                change: function (data) {
-                    if (data.state === 'NO_CHANGE' || data.state === 'CHILD_UPDATED') {
-                        data.state = 'UPDATED';
-                        markParentOfThisInstanceChanged(data);
+                change: function (instance) {
+                    if (instance.state === 'NO_CHANGE' || instance.state === 'CHILD_UPDATED') {
+                        instance.state = 'UPDATED';
+                        markParentOfThisInstanceChanged(instance);
                         self.dirty = true;
                     }
                 },

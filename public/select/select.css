@@ -26,6 +26,12 @@
   right: 15px;
 }
 
+.ui-select-bootstrap > .ui-select-match > .loading {
+  right: 30px;
+  font-size: 150%;
+  position: absolute;
+}
+
 .ui-select-bootstrap > .ui-select-choices {
   width: 100%;
 }

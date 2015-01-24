@@ -74,17 +74,6 @@ angular.module('tantalim.desktop')
         $scope.currentModel = ModelData.currentModel;
         Global.modelName = $scope.currentModel;
 
-        $scope.listSmartSelect = {};
-        $scope.runSmartSelect = function (sourceModel, modelName, queryValue) {
-            PageService.queryModelData(sourceModel, queryValue).then(function (d) {
-                $scope.listSmartSelect[sourceModel] = d.data;
-            });
-        };
-        $scope.chooseSmartSelect = function (modelName, copyFields, row) {
-            ModelCursor.current.instances[modelName].selectOption(row, copyFields);
-            ModelCursor.change(ModelCursor.current.instances[modelName]);
-        };
-
         $scope.rowChanged = function (thisInstance) {
             ModelCursor.change(thisInstance);
         };
