@@ -3,7 +3,7 @@
 
 angular.module('tantalim.desktop')
     .factory('PageCursor', function ($log) {
-        $log.debug('Starting PageCursor');
+        //$log.debug('Starting PageCursor');
 
         var _stub = function () {
         };

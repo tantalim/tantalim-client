@@ -300,10 +300,10 @@ angular.module('tantalim.desktop')
         }
 
         if (!Global.pageLoaded) {
-            console.info('Starting PageController');
             Global.pageLoaded = true;
             $scope.serverStatus = 'Loading...';
             $scope.serverError = '';
+            $scope.current = {};
             PageService.readModelData(ModelData.page.modelName)
                 .then(function (d) {
                     $scope.serverStatus = '';
@@ -360,7 +360,7 @@ angular.module('tantalim.desktop')
 
 angular.module('tantalim.desktop')
     .factory('PageCursor', function ($log) {
-        $log.debug('Starting PageCursor');
+        //$log.debug('Starting PageCursor');
 
         var _stub = function () {
         };
@@ -506,8 +506,6 @@ angular.module('tantalim.common')
             var modelMap = {};
 
             var fillModelMap = function (model) {
-//                console.info('fillModelMap');
-//                console.info(model);
                 modelMap[model.data.modelName] = model;
                 _.forEach(model.children, function (childModel) {
                     fillModelMap(childModel);
@@ -834,15 +832,18 @@ angular.module('tantalim.common')
                 root: rootSet,
                 current: current,
                 setRoot: function (model, data) {
-                    $log.debug('Setting Root data');
-                    $log.debug(model);
-                    $log.debug(data);
+                    //$log.debug('Setting Root data');
+                    //$log.debug(model);
+                    //$log.debug(data);
                     modelMap = {};
                     fillModelMap(model);
                     rootSet = new SmartNodeSet(model, data);
                     self.root = rootSet;
                     resetCurrents(rootSet);
                     self.current = current;
+                },
+                getCurrentInstance: function (modelName) {
+                    return current.instances[modelName];
                 },
                 dirty: false,
                 change: function (instance) {
@@ -863,7 +864,6 @@ angular.module('tantalim.common')
                     },
                     choose: function (modelName, id) {
                         var index = current.sets[modelName].findIndex(id);
-                        console.info(modelName + ' moving to ' + id + ' @ ' + index);
                         current.sets[modelName].moveTo(index);
                     },
                     select: function (modelName, index) {
@@ -1015,7 +1015,18 @@ angular.module('tantalim.common')
                 return $http.get('/data/' + modelName);
             },
             queryModelData: function (modelName, query) {
-                return $http.get('/data/' + modelName + '/q/' + query);
+                console.info("queryModelData");
+                console.info(query);
+                var url = '/data/' + modelName;
+                if (angular.isArray(query)) {
+                    url += "?"
+                    _.forEach(query, function (clause) {
+                        url += clause.field + clause.operator + clause.value + "&";
+                    });
+                } else if (query) {
+                    url += '/q/' + query;
+                }
+                return $http.get(url);
             },
             getMenu: function () {
                 return $http.get('/menu/');

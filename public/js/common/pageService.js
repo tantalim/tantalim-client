@@ -7,7 +7,18 @@ angular.module('tantalim.common')
                 return $http.get('/data/' + modelName);
             },
             queryModelData: function (modelName, query) {
-                return $http.get('/data/' + modelName + '/q/' + query);
+                //console.info("queryModelData");
+                //console.info(query);
+                var url = '/data/' + modelName;
+                if (angular.isArray(query)) {
+                    url += "?"
+                    _.forEach(query, function (clause) {
+                        url += clause.field + clause.operator + clause.value + "&";
+                    });
+                } else if (query) {
+                    url += '/q/' + query;
+                }
+                return $http.get(url);
             },
             getMenu: function () {
                 return $http.get('/menu/');

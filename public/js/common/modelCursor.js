@@ -14,8 +14,6 @@ angular.module('tantalim.common')
             var modelMap = {};
 
             var fillModelMap = function (model) {
-//                console.info('fillModelMap');
-//                console.info(model);
                 modelMap[model.data.modelName] = model;
                 _.forEach(model.children, function (childModel) {
                     fillModelMap(childModel);
@@ -342,15 +340,18 @@ angular.module('tantalim.common')
                 root: rootSet,
                 current: current,
                 setRoot: function (model, data) {
-                    $log.debug('Setting Root data');
-                    $log.debug(model);
-                    $log.debug(data);
+                    //$log.debug('Setting Root data');
+                    //$log.debug(model);
+                    //$log.debug(data);
                     modelMap = {};
                     fillModelMap(model);
                     rootSet = new SmartNodeSet(model, data);
                     self.root = rootSet;
                     resetCurrents(rootSet);
                     self.current = current;
+                },
+                getCurrentInstance: function (modelName) {
+                    return current.instances[modelName];
                 },
                 dirty: false,
                 change: function (instance) {
@@ -371,7 +372,6 @@ angular.module('tantalim.common')
                     },
                     choose: function (modelName, id) {
                         var index = current.sets[modelName].findIndex(id);
-                        console.info(modelName + ' moving to ' + id + ' @ ' + index);
                         current.sets[modelName].moveTo(index);
                     },
                     select: function (modelName, index) {

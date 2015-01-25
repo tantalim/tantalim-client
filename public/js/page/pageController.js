@@ -37,10 +37,10 @@ angular.module('tantalim.desktop')
         }
 
         if (!Global.pageLoaded) {
-            console.info('Starting PageController');
             Global.pageLoaded = true;
             $scope.serverStatus = 'Loading...';
             $scope.serverError = '';
+            $scope.current = {};
             PageService.readModelData(ModelData.page.modelName)
                 .then(function (d) {
                     $scope.serverStatus = '';
