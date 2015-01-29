@@ -146,12 +146,16 @@ angular.module('tantalim.common')
                     return newInstance;
                 }
 
+                newInstance.addChildModel = function(childModel, childDataSet) {
+                    var modelName = childModel.data.modelName;
+                    var smartSet = new SmartNodeSet(childModel, childDataSet, newInstance);
+                    newInstance.childModels[modelName] = smartSet;
+                };
+
                 if (row.children) {
-                    _.forEach(model.children, function (childModel) {
+                    _.forEach(model.children, function(childModel) {
                         var modelName = childModel.data.modelName;
-                        var childSet = row.children[modelName];
-                        var smartSet = new SmartNodeSet(childModel, childSet, newInstance);
-                        newInstance.childModels[modelName] = smartSet;
+                        newInstance.addChildModel(childModel, row.children[modelName]);
                     });
                 }
 
@@ -374,8 +378,10 @@ angular.module('tantalim.common')
                     if (current.sets[modelName] === undefined) {
                         var parentName = modelMap[modelName].parent;
                         var parentInstance = current.instances[parentName];
-                        var newSet = new SmartNodeSet(modelMap[modelName], [], parentInstance);
-                        resetCurrents(newSet);
+                        parentInstance.addChildModel({
+                            data: {modelName: modelName}
+                        }, []);
+                        resetCurrents(self.root);
                     }
                     return current.sets[modelName];
                 },
