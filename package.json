@@ -1,6 +1,6 @@
 {
   "name": "tantalim-client",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Tantalim client-side files for a Java Script SOFEA web application",
   "license": "GPLv3",
   "repository": {
