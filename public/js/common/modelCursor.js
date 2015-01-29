@@ -119,21 +119,28 @@ angular.module('tantalim.common')
                     if (!field.fieldDefault) {
                         return;
                     }
-                    if (field.fieldDefault.value) {
-                        row.data[field.fieldName] = field.fieldDefault.value;
-                        return;
+
+                    var DEFAULT_TYPE = {
+                        CONSTANT: "constant",
+                        FIELD: "field",
+                        FXN: "fxn"
+                    };
+
+                    switch(field.fieldDefault.type) {
+                        case DEFAULT_TYPE.FIELD:
+                            row.data[field.fieldName] = getFieldValue(field.fieldDefault.value, row);
+                            $log.debug('defaulted ' + field.fieldName + ' to ' + row.data[field.fieldName]);
+                            return;
+                        case DEFAULT_TYPE.FXN:
+                            console.info('running fxn - NOT SUPPORTED YET');
+                            row.data[field.fieldName] = field.fieldDefault.value;
+                            return;
+                        case DEFAULT_TYPE.CONSTANT:
+                        default:
+                            row.data[field.fieldName] = field.fieldDefault.value;
+                            $log.debug('defaulted ' + field.fieldName + ' to ' + row.data[field.fieldName]);
+                            return;
                     }
-                    if (field.fieldDefault.fromField) {
-                        row.data[field.fieldName] = getFieldValue(field.fieldDefault.fromField, row);
-                        return;
-                    }
-                    if (field.fieldDefault.fxn) {
-                        console.info('running fxn');
-                        row.data[field.fieldName] = field.fieldDefault.fxn;
-                        return;
-                    }
-                    $log.debug('No valid default found');
-                    $log.debug(field);
                 }
 
                 if (row.id === null) {
@@ -327,6 +334,7 @@ angular.module('tantalim.common')
                     newSet.rows.push(smartInstance);
                     newSet.moveToBottom();
                     markParentOfThisInstanceChanged(smartInstance);
+                    return smartInstance;
                 };
 
                 if (angular.isArray(data)) {
@@ -395,8 +403,9 @@ angular.module('tantalim.common')
                 },
                 action: {
                     insert: function (modelName) {
-                        self.getCurrentSet(modelName).insert();
+                        var newInstance = self.getCurrentSet(modelName).insert();
                         self.dirty = true;
+                        return newInstance;
                     },
                     delete: function (modelName, index) {
                         current.sets[modelName].delete(index);

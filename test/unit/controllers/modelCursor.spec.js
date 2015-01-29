@@ -95,37 +95,107 @@
                     expect(service.root.getInstance().id).toBe(1);
                 });
                 it('should navigate next', function () {
-                    service.root.moveNext();
+                    service.action.next("Tables");
                     expect(service.root.getInstance().id).toBe(2);
                 });
                 it('should navigate previous', function () {
-                    service.root.moveTo(1);
-                    service.root.movePrevious();
+                    service.action.select("Tables", 1);
+                    service.action.previous("Tables");
                     expect(service.root.getInstance().id).toBe(1);
+                });
+                it('should find record id = 2', function () {
+                    service.action.choose("Tables", 2);
+                    expect(service.root.getInstance().id).toBe(2);
                 });
             });
 
             describe('Insert', function () {
-                it('should set insert a new record', function () {
+                it('should insert a new record', function () {
                     service.setRoot(sampleModel, []);
-                    service.root.insert();
+                    var newRow = service.action.insert("Tables");
                     expect(service.root.rows.length).toBe(1);
-                    expect(service.current.instances.Tables.id).toBeTruthy();
+                    expect(newRow.id).toBeTruthy();
                 });
-                it('should set delete an existing record', function () {
+
+                it('should default the field value to 1', function () {
+                    sampleModel = {
+                        data: {modelName: 'Tables'},
+                        fields: [
+                            {
+                                "fieldName": "TableType1",
+                                "fieldDefault": {
+                                    "value": "1"
+                                }
+                            },
+                            {
+                                "fieldName": "TableType2",
+                                "fieldDefault": {
+                                    "type": "constant",
+                                    "value": "2"
+                                }
+                            }
+                        ]
+                    };
+                    service.setRoot(sampleModel, []);
+                    var newRow = service.action.insert("Tables");
+                    expect(newRow.data.TableType1).toBe("1");
+                    expect(newRow.data.TableType2).toBe("2");
+                });
+
+                it('should default the field value to 2', function () {
+                    sampleModel = {
+                        data: {modelName: 'Tables'},
+                        fields: [
+                            {
+                                "fieldName": "TableName",
+                                "fieldDefault": {
+                                    "type": "fxn",
+                                    "value": "1"
+                                }
+                            }
+                        ]
+                    };
+                    service.setRoot(sampleModel, []);
+                    var newRow = service.action.insert("Tables");
+                    expect(newRow.data.TableName).toBe("1");
+                });
+            });
+
+            describe('Delete', function () {
+                it('should delete nothing when empty', function () {
+                    expect(service.root.rows.length).toBe(1);
+                    service.action.delete("Tables");
+                    expect(service.root.rows.length).toBe(0);
+                    service.action.delete("Tables");
+                    expect(service.root.rows.length).toBe(0);
+                });
+                it('should delete an existing record', function () {
                     expect(service.root.deleted.length).toBe(0);
-                    service.root.delete();
+                    service.action.delete("Tables");
                     expect(service.root.rows.length).toBe(0);
                     expect(service.root.deleted.length).toBe(1);
                 });
-                it('should set delete a new record', function () {
+                it('should ignore a deleted new record', function () {
                     service.setRoot(sampleModel, []);
-                    service.root.insert();
-                    service.root.delete();
+                    service.action.insert("Tables");
+                    service.action.delete("Tables");
                     expect(service.root.rows.length).toBe(0);
                     expect(service.root.deleted.length).toBe(0);
                 });
+            });
 
+            describe('ReloadFromServer', function () {
+                it('should reload after insert', function () {
+                    var tableSet = service.getCurrentSet("Tables");
+                    var newRow = service.action.insert("Tables");
+                    var id = "NEW_ID_1";
+                    newRow.id = id;
+                    console.debug(newRow);
+                    tableSet.reloadFromServer([{
+                            tempID: id
+                        }]
+                    );
+                });
             });
         });
 
@@ -134,9 +204,26 @@
                 sampleModel = {
                     data: {modelName: 'Tables'},
                     orderBy: 'TableName',
+                    fields: [
+                        {
+                            "fieldName": "TableName"
+                        }
+                    ],
                     children: [
                         {
                             data: {modelName: 'Columns'},
+                            fields: [
+                                {
+                                    "fieldName": "ColumnName"
+                                },
+                                {
+                                    "fieldName": "ColumnTableName",
+                                    "fieldDefault": {
+                                        "type": "field",
+                                        "value": "TableName"
+                                    }
+                                }
+                            ],
                             orderBy: 'ColumnName'
                         }
                     ]
@@ -198,7 +285,6 @@
 
             it('should get the first instance of Tables', function () {
                 var result = service.root.getInstance();
-//                    var result = service.current.Tables;
                 expect(result.id).toEqual(1);
             });
 
@@ -212,6 +298,26 @@
                 expect(result.id).toEqual(2);
             });
 
+            it('should insert new Column with TableID default', function () {
+                var table = service.getCurrentInstance("Tables");
+                var columns = service.getCurrentSet("Columns");
+                var newColumn = columns.insert();
+                expect(newColumn.data.ColumnTableName).toEqual(table.data.TableName);
+            });
+
+            it('should get child set even if data not passed in', function () {
+                sampleList = [
+                    {
+                        "id": 1,
+                        "data": {
+                            "TableName": "A"
+                        }
+                    }
+                ];
+                service.setRoot(sampleModel, sampleList);
+                service.getCurrentSet("Columns");
+            });
+
             it('should get the first set of Columns', function () {
                 var result = service.current.sets.Columns;
                 expect(result.rows.length).toEqual(2);
@@ -220,4 +326,4 @@
         });
     });
 })
-    ();
+();
