@@ -8,10 +8,10 @@ module.exports = function (grunt) {
             js: {
                 files: [
                     'gruntfile.js',
+                    //'test/unit/**/*.js',
                     'public/js/common/**/*.js',
                     'public/js/mobile/**/*.js',
-                    'public/js/page/**/*.js',
-                    'test/**/*.js'
+                    'public/js/page/**/*.js'
                 ],
                 tasks: ['compile', 'jshint'],
                 options: {
@@ -23,7 +23,8 @@ module.exports = function (grunt) {
                     'public/js/common/**/*.js',
                     'public/js/mobile/**/*.js',
                     'public/js/page/**/*.js',
-                    'test/**/*.js'
+                    'test/unit/**/*.js',
+                    'test/karma.conf.js'
                 ],
                 tasks: ['jshint', 'karma:continuous:run']
             }
@@ -32,8 +33,8 @@ module.exports = function (grunt) {
             all: {
                 src: [
                     'gruntfile.js',
+                    // 'test/**/*.js',
                     'public/js/page/**/*.js'
-                    // 'test/**/*.js'
                 ],
                 options: {
                     jshintrc: true
