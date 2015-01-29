@@ -58,15 +58,18 @@ angular.module('tantalim.select', [])
                         ctrl.open = false;
                     } else {
                         ctrl.filter = EMPTY_SEARCH;
+                        var whereClause = _.map(itemWhere, function(whereDefinition) {
+                            // This works but is ugly. We need a simpler way to get to the data
+                            var whereValueModelName = "BuildTable";
+                            var value = ModelCursor.current.instances[whereValueModelName].data[whereDefinition.valueField];
+                            return {
+                                "field": whereDefinition.sourceField,
+                                "operator": whereDefinition.operator,
+                                "value": value
+                            };
+                        });
                         if (ctrl.items === undefined) {
                             ctrl.loading = true;
-                            var whereClause = _.map(itemWhere, function(whereDefinition) {
-                                return {
-                                    "field": whereDefinition.sourceField,
-                                    "operator": whereDefinition.operator,
-                                    "value": "fce929b7-9f57-11df-936f-e37ecc873ea2" // whereDefinition.valueField
-                                };
-                            });
                             if (ctrl.filter) {
                                 //whereClause.push({ctrl.filter});
                             }

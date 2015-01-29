@@ -13,10 +13,12 @@ angular.module('tantalim.common')
             var current = {sets: {}, instances: {}};
             var modelMap = {};
 
-            var fillModelMap = function (model) {
-                modelMap[model.data.modelName] = model;
+            var fillModelMap = function (model, parentName) {
+                var modelName = model.data.modelName;
+                modelMap[modelName] = model;
+                model.parent = parentName;
                 _.forEach(model.children, function (childModel) {
-                    fillModelMap(childModel);
+                    fillModelMap(childModel, modelName);
                 });
             };
 
@@ -52,7 +54,7 @@ angular.module('tantalim.common')
             };
 
             var SmartNodeInstance = function (model, row, nodeSet) {
-                // $log.debug('Adding SmartNodeInstance for ' + model.data.modelName);
+                //$log.debug('Adding SmartNodeInstance for ' + model.data.modelName);
                 var defaults = {
                     _type: 'SmartNodeInstance',
                     /**
@@ -353,6 +355,15 @@ angular.module('tantalim.common')
                 getCurrentInstance: function (modelName) {
                     return current.instances[modelName];
                 },
+                getCurrentSet: function (modelName) {
+                    if (current.sets[modelName] === undefined) {
+                        var parentName = modelMap[modelName].parent;
+                        var parentInstance = current.instances[parentName];
+                        var newSet = new SmartNodeSet(modelMap[modelName], [], parentInstance);
+                        resetCurrents(newSet);
+                    }
+                    return current.sets[modelName];
+                },
                 dirty: false,
                 change: function (instance) {
                     if (instance.state === 'NO_CHANGE' || instance.state === 'CHILD_UPDATED') {
@@ -363,7 +374,7 @@ angular.module('tantalim.common')
                 },
                 action: {
                     insert: function (modelName) {
-                        current.sets[modelName].insert();
+                        self.getCurrentSet(modelName).insert();
                         self.dirty = true;
                     },
                     delete: function (modelName, index) {

@@ -152,10 +152,12 @@ angular.module('tantalim.common')
             var current = {sets: {}, instances: {}};
             var modelMap = {};
 
-            var fillModelMap = function (model) {
-                modelMap[model.data.modelName] = model;
+            var fillModelMap = function (model, parentName) {
+                var modelName = model.data.modelName;
+                modelMap[modelName] = model;
+                model.parent = parentName;
                 _.forEach(model.children, function (childModel) {
-                    fillModelMap(childModel);
+                    fillModelMap(childModel, modelName);
                 });
             };
 
@@ -191,7 +193,7 @@ angular.module('tantalim.common')
             };
 
             var SmartNodeInstance = function (model, row, nodeSet) {
-                // $log.debug('Adding SmartNodeInstance for ' + model.data.modelName);
+                //$log.debug('Adding SmartNodeInstance for ' + model.data.modelName);
                 var defaults = {
                     _type: 'SmartNodeInstance',
                     /**
@@ -470,6 +472,7 @@ angular.module('tantalim.common')
             function markParentOfThisInstanceChanged(instance) {
                 var parent = instance.nodeSet.parentInstance;
                 if (parent && parent.state === 'NO_CHANGE') {
+                    console.info("child_updated" + parent.id);
                     parent.state = 'CHILD_UPDATED';
                     markParentOfThisInstanceChanged(parent);
                 }
@@ -488,9 +491,22 @@ angular.module('tantalim.common')
                     self.root = rootSet;
                     resetCurrents(rootSet);
                     self.current = current;
+                    console.log(modelMap);
                 },
                 getCurrentInstance: function (modelName) {
                     return current.instances[modelName];
+                },
+                getCurrentSet: function (modelName) {
+                    if (current.sets[modelName] === undefined) {
+                        console.info("getCurrentSet for " + modelName);
+                        var parentName = modelMap[modelName].parent;
+                        console.info("parentName = " + parentName);
+                        var parentInstance = current.instances[parentName];
+                        console.info("parentInstance = " + parentInstance);
+                        var newSet = new SmartNodeSet(modelMap[modelName], [], parentInstance);
+                        resetCurrents(newSet);
+                    }
+                    return current.sets[modelName];
                 },
                 dirty: false,
                 change: function (instance) {
@@ -502,7 +518,7 @@ angular.module('tantalim.common')
                 },
                 action: {
                     insert: function (modelName) {
-                        current.sets[modelName].insert();
+                        self.getCurrentSet(modelName).insert();
                         self.dirty = true;
                     },
                     delete: function (modelName, index) {
@@ -662,8 +678,8 @@ angular.module('tantalim.common')
                 return $http.get('/data/' + modelName);
             },
             queryModelData: function (modelName, query) {
-                console.info("queryModelData");
-                console.info(query);
+                //console.info("queryModelData");
+                //console.info(query);
                 var url = '/data/' + modelName;
                 if (angular.isArray(query)) {
                     url += "?"
