@@ -11,7 +11,8 @@ module.exports = function (config) {
 
         // list of files / patterns to load in the browser
         files: [
-            'public/lib/angular-grid/lib/jquery-1.9.1.js',
+            'public/lib/jquery/dist/jquery.min.js',
+            'public/lib/lodash/lodash.min.js',
             'public/lib/angular/angular.js',
             'public/lib/angular-mocks/angular-mocks.js',
             'public/lib/angular-cookies/angular-cookies.js',
@@ -20,8 +21,7 @@ module.exports = function (config) {
             'public/lib/angular-sanitize/angular-sanitize.js',
             'public/lib/angular-bootstrap/ui-bootstrap-tpls.js',
             'public/lib/angular-bootstrap/ui-bootstrap.js',
-            'public/lib/lodash/dist/lodash.min.js',
-            'public/lib/angular-grid/ng-grid-2.0.7.min.js',
+            'public/lib/angular-grid/ng-grid-2.0.14.min.js',
 //            'public/lib/angular-ui-utils/modules/route/route.js',
             'public/select/select.js',
             'public/js/common/**/*.js',

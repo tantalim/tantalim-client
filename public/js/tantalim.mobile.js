@@ -148,17 +148,28 @@ angular.module('tantalim.common')
 //                // TODO figure out how to set this in a smarter way
 //            };
 
-            var rootSet = null;
-            var current = {sets: {}, instances: {}};
-            var modelMap = {};
+            var rootSet;
+            var current;
+            var modelMap;
+
+            var clear = function() {
+                rootSet = null;
+                current = {sets: {}, instances: {}};
+                modelMap = {};
+            }
+            clear();
 
             var fillModelMap = function (model, parentName) {
-                var modelName = model.data.modelName;
-                modelMap[modelName] = model;
-                model.parent = parentName;
-                _.forEach(model.children, function (childModel) {
-                    fillModelMap(childModel, modelName);
-                });
+                if (model && model.data) {
+                    //console.debug(model);
+                    //console.debug(parentName);
+                    var modelName = model.data.modelName;
+                    modelMap[modelName] = model;
+                    model.parent = parentName;
+                    _.forEach(model.children, function (childModel) {
+                        fillModelMap(childModel, modelName);
+                    });
+                }
             };
 
             var resetCurrents = function (value, modelName) {
@@ -287,8 +298,8 @@ angular.module('tantalim.common')
             };
 
             var SmartNodeSet = function (model, data, parentInstance) {
-                //$log.debug('Adding SmartNodeSet for ' + model.data.modelName);
-                //$log.debug(model);
+                //console.debug('Adding SmartNodeSet for ' + model.data.modelName);
+                //console.debug(model);
                 var defaults = {
                     _type: 'SmartNodeSet',
                     model: {
@@ -484,7 +495,11 @@ angular.module('tantalim.common')
                     //$log.debug('Setting Root data');
                     //$log.debug(model);
                     //$log.debug(data);
-                    modelMap = {};
+                    clear();
+                    if (_.isEmpty(model)) {
+                        //console.log("setRoot called with empty model, exiting");
+                        return;
+                    }
                     fillModelMap(model);
                     rootSet = new SmartNodeSet(model, data);
                     self.root = rootSet;

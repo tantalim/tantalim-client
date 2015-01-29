@@ -2,20 +2,12 @@
 
 (function () {
     describe('ModelCursor', function () {
-        var service;
+        var service, sampleModel, sampleList;
 
         beforeEach(module('tantalim.desktop'));
 
-        var sampleModel, sampleList;
-
-        var initialize = function () {
-            service.setRoot(sampleModel, sampleList);
-        };
-
         beforeEach(inject(function (ModelCursor) {
             service = ModelCursor;
-            sampleModel = {};
-            sampleList = [];
         }));
 
         describe('WithSingleModel', function () {
@@ -33,10 +25,10 @@
                         }
                     }
                 ];
+                service.setRoot(sampleModel, sampleList);
             });
 
             it('should set the data', function () {
-                initialize();
                 expect(service.root.rows).toBeTruthy();
             });
 
@@ -65,15 +57,14 @@
                             }
                         }
                     ];
+                    service.setRoot(sampleModel, sampleList);
                 });
 
                 it('should sort data', function () {
-                    initialize();
                     service.root.sort();
                     expect(service.root.rows[0].id).toBe(1);
                 });
                 it('should sort data in reverse', function () {
-                    initialize();
                     service.root.sortReverse();
                     expect(service.root.rows[0].id).toBe(3);
                 });
@@ -97,19 +88,17 @@
                             }
                         }
                     ];
+                    service.setRoot(sampleModel, sampleList);
                 });
 
                 it('should set the first record as current', function () {
-                    initialize();
                     expect(service.root.getInstance().id).toBe(1);
                 });
                 it('should navigate next', function () {
-                    initialize();
                     service.root.moveNext();
                     expect(service.root.getInstance().id).toBe(2);
                 });
                 it('should navigate previous', function () {
-                    initialize();
                     service.root.moveTo(1);
                     service.root.movePrevious();
                     expect(service.root.getInstance().id).toBe(1);
@@ -118,26 +107,23 @@
 
             describe('Insert', function () {
                 it('should set insert a new record', function () {
-                    sampleList = [];
-                    initialize();
+                    service.setRoot(sampleModel, []);
                     service.root.insert();
                     expect(service.root.rows.length).toBe(1);
                     expect(service.current.instances.Tables.id).toBeTruthy();
                 });
                 it('should set delete an existing record', function () {
-                    initialize();
                     expect(service.root.deleted.length).toBe(0);
                     service.root.delete();
                     expect(service.root.rows.length).toBe(0);
                     expect(service.root.deleted.length).toBe(1);
                 });
                 it('should set delete a new record', function () {
-                    sampleList = [];
-                    initialize();
+                    service.setRoot(sampleModel, []);
                     service.root.insert();
                     service.root.delete();
                     expect(service.root.rows.length).toBe(0);
-                    expect(service.root.deleted.length).toBe(0); // TODO this isn't working yet :(
+                    expect(service.root.deleted.length).toBe(0);
                 });
 
             });
@@ -207,35 +193,31 @@
                         }
                     }
                 ];
+                service.setRoot(sampleModel, sampleList);
             });
 
             it('should get the first instance of Tables', function () {
-                initialize();
                 var result = service.root.getInstance();
 //                    var result = service.current.Tables;
                 expect(result.id).toEqual(1);
             });
 
             it('should set the first child row', function () {
-                initialize();
                 expect(service.root.rows[0].childModels.Columns.getInstance().id).toEqual(2);
                 expect(service.root.rows[1].childModels.Columns.getInstance().id).toEqual(5);
             });
 
             it('should get the first instance of Columns', function () {
-                initialize();
                 var result = service.current.instances.Columns;
                 expect(result.id).toEqual(2);
             });
 
             it('should get the first set of Columns', function () {
-                initialize();
                 var result = service.current.sets.Columns;
                 expect(result.rows.length).toEqual(2);
             });
 
         });
-
     });
 })
     ();
