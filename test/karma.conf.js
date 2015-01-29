@@ -25,7 +25,7 @@ module.exports = function (config) {
             'public/js/common/**/*.js',
             'public/js/page/**/*.js',
             'public/js/mobile/**/*.js',
-            'test/karma/unit/**/*.js'
+            'test/unit/**/*.js'
         ],
 
         // list of files to exclude

@@ -13,7 +13,7 @@ module.exports = function (grunt) {
                     'public/js/page/**/*.js',
                     'test/**/*.js'
                 ],
-                tasks: ['compile'],
+                tasks: ['compile', 'jshint'],
                 options: {
                     livereload: true
                 }
@@ -23,12 +23,9 @@ module.exports = function (grunt) {
                     'public/js/common/**/*.js',
                     'public/js/mobile/**/*.js',
                     'public/js/page/**/*.js',
-                    'test/karma/**/*.js'
+                    'test/**/*.js'
                 ],
-                options: {
-                    livereload: true
-                },
-                tasks: ['jshint', 'karma:unit:run']
+                tasks: ['jshint', 'karma:continuous:run']
             }
         },
         jshint: {
@@ -92,14 +89,18 @@ module.exports = function (grunt) {
             }
         },
         karma: {
-            unit: {
-                // for Development
+            options: {
                 configFile: 'test/karma.conf.js'
             },
-            continuous: {
-                // for Jenkins CI
+            unit: {
+                // for Development
                 configFile: 'test/karma.conf.js',
                 singleRun: true
+            },
+            continuous: {
+                // keep karma running in the background
+                configFile: 'test/karma.conf.js',
+                background: true
             }
         }
     });
@@ -124,4 +125,7 @@ module.exports = function (grunt) {
 
     //Test task. //
     grunt.registerTask('test', ['env:test', 'karma:unit']);
+
+    grunt.registerTask('serve', ['karma:continuous:start', 'watch']);
+    grunt.registerTask('default', ['concat', 'uglify', 'karma:unit:run']);
 };
