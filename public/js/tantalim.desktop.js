@@ -825,7 +825,6 @@ angular.module('tantalim.common')
             function markParentOfThisInstanceChanged(instance) {
                 var parent = instance.nodeSet.parentInstance;
                 if (parent && parent.state === 'NO_CHANGE') {
-                    console.info("child_updated" + parent.id);
                     parent.state = 'CHILD_UPDATED';
                     markParentOfThisInstanceChanged(parent);
                 }
@@ -844,18 +843,14 @@ angular.module('tantalim.common')
                     self.root = rootSet;
                     resetCurrents(rootSet);
                     self.current = current;
-                    console.log(modelMap);
                 },
                 getCurrentInstance: function (modelName) {
                     return current.instances[modelName];
                 },
                 getCurrentSet: function (modelName) {
                     if (current.sets[modelName] === undefined) {
-                        console.info("getCurrentSet for " + modelName);
                         var parentName = modelMap[modelName].parent;
-                        console.info("parentName = " + parentName);
                         var parentInstance = current.instances[parentName];
-                        console.info("parentInstance = " + parentInstance);
                         var newSet = new SmartNodeSet(modelMap[modelName], [], parentInstance);
                         resetCurrents(newSet);
                     }
