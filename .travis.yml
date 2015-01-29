@@ -8,6 +8,8 @@ cache:
   directories:
     - node_modules
 
-install: npm install
+install:
+  - npm install
+  - bower install
 
 before_install: npm install -g grunt-cli
