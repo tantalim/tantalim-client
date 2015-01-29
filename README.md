@@ -2,14 +2,5 @@
 
 Tantalim client-side files for a Java Script SOFEA web application
 
-## Development
-
-See http://www.devthought.com/2012/02/17/npm-tricks/
-```
-$ cd tantalim-client
-# Register tantalim-server on your computer
-$ npm link
-$ cd ../sample-app
-# Create shortcut to tantalim-client
-$ npm link tantalim-client
-```
+[![Build Status](https://travis-ci.org/tantalim/tantalim-client.svg?branch=master)](https://travis-ci.org/tantalim/tantalim-client)
+[![devDependency Status](https://david-dm.org/tantalim/tantalim-client/dev-status.svg)](https://david-dm.org/tantalim/tantalim-client#info=devDependencies)
