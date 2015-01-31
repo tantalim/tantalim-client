@@ -9,8 +9,9 @@ angular.module('tantalim.common')
             var _self = {
                 convertToDto: function (model, dataSet) {
                     var modelName = model.data.modelName;
-                    $log.debug('Starting convertToDto for model ' + modelName);
-                    $log.debug(model);
+                    //$log.debug('Starting convertToDto for model ' + modelName);
+                    //$log.debug(model);
+                    //$log.debug(dataSet);
 
                     var convertSmartNodeInstanceToInsert = function (instance) {
                         return {

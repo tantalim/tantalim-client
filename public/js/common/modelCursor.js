@@ -65,7 +65,7 @@ angular.module('tantalim.common')
             };
 
             var SmartNodeInstance = function (model, row, nodeSet) {
-                //$log.debug('Adding SmartNodeInstance for ' + model.data.modelName);
+                //$log.debug('Adding SmartNodeInstance for ', model, row);
                 var defaults = {
                     _type: 'SmartNodeInstance',
                     /**
@@ -144,12 +144,12 @@ angular.module('tantalim.common')
                 }
 
                 if (row.id === null) {
+                    //$log.debug('id is null, so assume record is newly inserted', row);
                     newInstance.state = 'INSERTED';
                     newInstance.id = GUID();
                     _.forEach(model.fields, function (field) {
                         setFieldDefault(field, row);
                     });
-                    $log.debug(row);
                     return newInstance;
                 }
 
