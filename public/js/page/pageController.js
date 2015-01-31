@@ -55,7 +55,7 @@ angular.module('tantalim.desktop')
                     ModelCursor.setRoot(ModelData.model, d.data);
                     attachModelCursorToScope();
                 });
-            PageCursor.setPage(ModelData.page);
+            PageCursor.initialize(ModelData.page);
         } else {
             attachModelCursorToScope();
         }

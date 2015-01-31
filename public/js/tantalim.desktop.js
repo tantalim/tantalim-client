@@ -318,7 +318,7 @@ angular.module('tantalim.desktop')
                     ModelCursor.setRoot(ModelData.model, d.data);
                     attachModelCursorToScope();
                 });
-            PageCursor.setPage(ModelData.page);
+            PageCursor.initialize(ModelData.page);
         } else {
             attachModelCursorToScope();
         }
@@ -360,36 +360,25 @@ angular.module('tantalim.desktop')
 
 angular.module('tantalim.desktop')
     .factory('PageCursor', function ($log) {
-        $log.debug('Starting PageCursor');
+        //$log.debug('Starting PageCursor');
 
-        var _stub = function () {
-        };
-        var self = {
-            pages: {},
-            views: {},
-            current: null,
-            visibleView: null,
-            setPage: _stub,
-            action: {
-            }
-        };
-
-        self.setPage = function (p) {
-            new SmartPage(p);
-            new SmartView(p);
-        };
-
-        var SmartPage = function (page) {
-            var thisPage = {
-                id: page.id,
-                viewMode: page.viewMode
+        var SmartSection = function (pageSection) {
+            var self = {
+                id: pageSection.id,
+                viewMode: pageSection.viewMode || 'single'
             };
-            self.pages[page.id] = thisPage;
+            cursor.sections[pageSection.id] = self;
 
-            _.forEach(page.pages, function (childPage) {
-                new SmartPage(childPage);
+            _.forEach(pageSection.children, function (child) {
+                new SmartSection(child);
+            });
+
+            _.forEach(pageSection.page, function (child) {
+                $log.warn('Using child pages is deprecated', self, child);
+                new SmartSection(child);
             });
         };
+
 /*
         var gridOptions = function (view) {
 
@@ -435,24 +424,22 @@ angular.module('tantalim.desktop')
         };
 */
 
-        var SmartView = function (view) {
-            var thisView = {
-                id: view.id
-            };
-            // Removing ngGrid for now
-            // gridOptions: gridOptions(view)
-
-            self.views[view.id] = thisView;
-
-            _.forEach(view.children, function (childView) {
-                new SmartView(childView);
-            });
-            _.forEach(view.pages, function (childView) {
-                new SmartView(childView);
-            });
+        var cursor = {
+            /**
+             * A pointer to the currently selected section. Useful for key binding and such.
+             */
+            current: null,
+            /**
+             * A list of each section on the page
+             */
+            sections: {}
         };
 
-        return self;
+        cursor.initialize = function (p) {
+            new SmartSection(p);
+        };
+
+        return cursor;
     }
 );
 
@@ -554,12 +541,10 @@ angular.module('tantalim.common')
                         resetCurrents(childSet, childModelName);
                     });
                 }
-
-                console.info('resetCurrents to', current);
             };
 
             var SmartNodeInstance = function (model, row, nodeSet) {
-                $log.debug('Adding SmartNodeInstance for ', model, row);
+                //$log.debug('Adding SmartNodeInstance for ', model, row);
                 var defaults = {
                     _type: 'SmartNodeInstance',
                     /**
@@ -638,7 +623,7 @@ angular.module('tantalim.common')
                 }
 
                 if (row.id === null) {
-                    $log.debug('id is null, so assume record is newly inserted', row);
+                    //$log.debug('id is null, so assume record is newly inserted', row);
                     newInstance.state = 'INSERTED';
                     newInstance.id = GUID();
                     _.forEach(model.fields, function (field) {
@@ -650,13 +635,11 @@ angular.module('tantalim.common')
                 newInstance.addChildModel = function(childModel, childDataSet) {
                     var modelName = childModel.data.modelName;
                     var smartSet = new SmartNodeSet(childModel, childDataSet, newInstance);
-                    console.debug('   created smartSet');
                     newInstance.childModels[modelName] = smartSet;
                 };
 
                 if (row.children) {
                     _.forEach(model.children, function(childModel) {
-                        console.debug('   about to add child instance');
                         var modelName = childModel.data.modelName;
                         newInstance.addChildModel(childModel, row.children[modelName]);
                     });
@@ -666,7 +649,7 @@ angular.module('tantalim.common')
             };
 
             var SmartNodeSet = function (model, data, parentInstance) {
-                console.debug('Adding SmartNodeSet for ' + model.data.modelName);
+                //console.debug('Adding SmartNodeSet for ' + model.data.modelName);
                 //console.debug(model);
                 var defaults = {
                     _type: 'SmartNodeSet',
@@ -936,9 +919,9 @@ angular.module('tantalim.common')
             var _self = {
                 convertToDto: function (model, dataSet) {
                     var modelName = model.data.modelName;
-                    $log.debug('Starting convertToDto for model ' + modelName);
-                    $log.debug(model);
-                    $log.debug(dataSet);
+                    //$log.debug('Starting convertToDto for model ' + modelName);
+                    //$log.debug(model);
+                    //$log.debug(dataSet);
 
                     var convertSmartNodeInstanceToInsert = function (instance) {
                         return {

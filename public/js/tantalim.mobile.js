@@ -201,12 +201,10 @@ angular.module('tantalim.common')
                         resetCurrents(childSet, childModelName);
                     });
                 }
-
-                console.info('resetCurrents to', current);
             };
 
             var SmartNodeInstance = function (model, row, nodeSet) {
-                $log.debug('Adding SmartNodeInstance for ', model, row);
+                //$log.debug('Adding SmartNodeInstance for ', model, row);
                 var defaults = {
                     _type: 'SmartNodeInstance',
                     /**
@@ -285,7 +283,7 @@ angular.module('tantalim.common')
                 }
 
                 if (row.id === null) {
-                    $log.debug('id is null, so assume record is newly inserted', row);
+                    //$log.debug('id is null, so assume record is newly inserted', row);
                     newInstance.state = 'INSERTED';
                     newInstance.id = GUID();
                     _.forEach(model.fields, function (field) {
@@ -297,13 +295,11 @@ angular.module('tantalim.common')
                 newInstance.addChildModel = function(childModel, childDataSet) {
                     var modelName = childModel.data.modelName;
                     var smartSet = new SmartNodeSet(childModel, childDataSet, newInstance);
-                    console.debug('   created smartSet');
                     newInstance.childModels[modelName] = smartSet;
                 };
 
                 if (row.children) {
                     _.forEach(model.children, function(childModel) {
-                        console.debug('   about to add child instance');
                         var modelName = childModel.data.modelName;
                         newInstance.addChildModel(childModel, row.children[modelName]);
                     });
@@ -313,7 +309,7 @@ angular.module('tantalim.common')
             };
 
             var SmartNodeSet = function (model, data, parentInstance) {
-                console.debug('Adding SmartNodeSet for ' + model.data.modelName);
+                //console.debug('Adding SmartNodeSet for ' + model.data.modelName);
                 //console.debug(model);
                 var defaults = {
                     _type: 'SmartNodeSet',
@@ -583,9 +579,9 @@ angular.module('tantalim.common')
             var _self = {
                 convertToDto: function (model, dataSet) {
                     var modelName = model.data.modelName;
-                    $log.debug('Starting convertToDto for model ' + modelName);
-                    $log.debug(model);
-                    $log.debug(dataSet);
+                    //$log.debug('Starting convertToDto for model ' + modelName);
+                    //$log.debug(model);
+                    //$log.debug(dataSet);
 
                     var convertSmartNodeInstanceToInsert = function (instance) {
                         return {

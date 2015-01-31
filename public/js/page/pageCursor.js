@@ -3,36 +3,25 @@
 
 angular.module('tantalim.desktop')
     .factory('PageCursor', function ($log) {
-        $log.debug('Starting PageCursor');
+        //$log.debug('Starting PageCursor');
 
-        var _stub = function () {
-        };
-        var self = {
-            pages: {},
-            views: {},
-            current: null,
-            visibleView: null,
-            setPage: _stub,
-            action: {
-            }
-        };
-
-        self.setPage = function (p) {
-            new SmartPage(p);
-            new SmartView(p);
-        };
-
-        var SmartPage = function (page) {
-            var thisPage = {
-                id: page.id,
-                viewMode: page.viewMode
+        var SmartSection = function (pageSection) {
+            var self = {
+                id: pageSection.id,
+                viewMode: pageSection.viewMode || 'single'
             };
-            self.pages[page.id] = thisPage;
+            cursor.sections[pageSection.id] = self;
 
-            _.forEach(page.pages, function (childPage) {
-                new SmartPage(childPage);
+            _.forEach(pageSection.children, function (child) {
+                new SmartSection(child);
+            });
+
+            _.forEach(pageSection.page, function (child) {
+                $log.warn('Using child pages is deprecated', self, child);
+                new SmartSection(child);
             });
         };
+
 /*
         var gridOptions = function (view) {
 
@@ -78,23 +67,21 @@ angular.module('tantalim.desktop')
         };
 */
 
-        var SmartView = function (view) {
-            var thisView = {
-                id: view.id
-            };
-            // Removing ngGrid for now
-            // gridOptions: gridOptions(view)
-
-            self.views[view.id] = thisView;
-
-            _.forEach(view.children, function (childView) {
-                new SmartView(childView);
-            });
-            _.forEach(view.pages, function (childView) {
-                new SmartView(childView);
-            });
+        var cursor = {
+            /**
+             * A pointer to the currently selected section. Useful for key binding and such.
+             */
+            current: null,
+            /**
+             * A list of each section on the page
+             */
+            sections: {}
         };
 
-        return self;
+        cursor.initialize = function (p) {
+            new SmartSection(p);
+        };
+
+        return cursor;
     }
 );
