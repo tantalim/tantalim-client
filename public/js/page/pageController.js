@@ -36,9 +36,9 @@ angular.module('tantalim.desktop')
             });
         }
 
-        if (!Global.pageLoaded) {
+        function loadData() {
             Global.pageLoaded = true;
-            $scope.serverStatus = 'Loading...';
+            $scope.serverStatus = 'Loading data...';
             $scope.serverError = '';
             $scope.current = {};
             PageService.readModelData(ModelData.page.modelName)
@@ -56,6 +56,10 @@ angular.module('tantalim.desktop')
                     attachModelCursorToScope();
                 });
             PageCursor.initialize(ModelData.page);
+        }
+
+        if (!Global.pageLoaded) {
+            loadData();
         } else {
             attachModelCursorToScope();
         }
@@ -78,6 +82,14 @@ angular.module('tantalim.desktop')
             ModelCursor.change(thisInstance);
         };
 
+        $scope.refresh = function() {
+            if (ModelCursor.dirty) {
+                $scope.serverStatus = 'Cannot reload data';
+                return;
+            }
+            loadData();
+        };
+
         $scope.save = function () {
             $scope.serverStatus = 'Saving...';
             ModelSaver.save(ModelData.model, ModelCursor.root, function (status) {
@@ -90,5 +102,10 @@ angular.module('tantalim.desktop')
         keyboardManager.bind('ctrl+s', function () {
             $scope.save();
         });
+
+        $scope.currentView = null;
+        $scope.gotoAnchor = function(targetID) {
+
+        };
     }
 );

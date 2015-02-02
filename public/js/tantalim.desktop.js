@@ -1,6 +1,6 @@
 'use strict';
 // Source: public/js/page/_app.js
-angular.module('tantalim.desktop', ['tantalim.common', 'ngRoute', 'ui.bootstrap', 'ngGrid', 'ngSanitize', 'tantalim.select']);
+angular.module('tantalim.desktop', ['tantalim.common', 'ngRoute', 'ui.bootstrap', 'ngSanitize', 'tantalim.select']);
 
 // Source: public/js/page/keyboardManager.js
 angular.module('tantalim.desktop')
@@ -299,9 +299,9 @@ angular.module('tantalim.desktop')
             });
         }
 
-        if (!Global.pageLoaded) {
+        function loadData() {
             Global.pageLoaded = true;
-            $scope.serverStatus = 'Loading...';
+            $scope.serverStatus = 'Loading data...';
             $scope.serverError = '';
             $scope.current = {};
             PageService.readModelData(ModelData.page.modelName)
@@ -319,6 +319,10 @@ angular.module('tantalim.desktop')
                     attachModelCursorToScope();
                 });
             PageCursor.initialize(ModelData.page);
+        }
+
+        if (!Global.pageLoaded) {
+            loadData();
         } else {
             attachModelCursorToScope();
         }
@@ -341,6 +345,14 @@ angular.module('tantalim.desktop')
             ModelCursor.change(thisInstance);
         };
 
+        $scope.refresh = function() {
+            if (ModelCursor.dirty) {
+                $scope.serverStatus = 'Cannot reload data';
+                return;
+            }
+            loadData();
+        };
+
         $scope.save = function () {
             $scope.serverStatus = 'Saving...';
             ModelSaver.save(ModelData.model, ModelCursor.root, function (status) {
@@ -353,6 +365,11 @@ angular.module('tantalim.desktop')
         keyboardManager.bind('ctrl+s', function () {
             $scope.save();
         });
+
+        $scope.currentView = null;
+        $scope.gotoAnchor = function(targetID) {
+
+        };
     }
 );
 // Source: public/js/page/pageCursor.js
@@ -881,14 +898,24 @@ angular.module('tantalim.common')
                     }
                 },
                 action: {
+                    length: function (modelName) {
+                        if (modelName in current.sets) {
+                            return current.sets[modelName].rows.length;
+                        }
+                        return 0;
+                    },
                     insert: function (modelName) {
                         var newInstance = self.getCurrentSet(modelName).insert();
                         self.dirty = true;
+                        //resetCurrents(newInstance, modelName);
                         return newInstance;
                     },
                     delete: function (modelName, index) {
                         current.sets[modelName].delete(index);
                         self.dirty = true;
+                    },
+                    deleteEnabled: function (modelName) {
+                        return current.instances[modelName] != null;
                     },
                     choose: function (modelName, id) {
                         var index = current.sets[modelName].findIndex(id);

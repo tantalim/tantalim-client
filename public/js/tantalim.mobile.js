@@ -541,14 +541,24 @@ angular.module('tantalim.common')
                     }
                 },
                 action: {
+                    length: function (modelName) {
+                        if (modelName in current.sets) {
+                            return current.sets[modelName].rows.length;
+                        }
+                        return 0;
+                    },
                     insert: function (modelName) {
                         var newInstance = self.getCurrentSet(modelName).insert();
                         self.dirty = true;
+                        //resetCurrents(newInstance, modelName);
                         return newInstance;
                     },
                     delete: function (modelName, index) {
                         current.sets[modelName].delete(index);
                         self.dirty = true;
+                    },
+                    deleteEnabled: function (modelName) {
+                        return current.instances[modelName] != null;
                     },
                     choose: function (modelName, id) {
                         var index = current.sets[modelName].findIndex(id);

@@ -125,6 +125,6 @@ module.exports = function (grunt) {
     grunt.registerTask('run', ['concurrent']);
 
     //Test task. //
-    grunt.registerTask('test', ['env:test', 'karma:unit']);
+    grunt.registerTask('test', ['karma:unit']);
     grunt.registerTask('serve', ['karma:continuous:start', 'watch']);
 };

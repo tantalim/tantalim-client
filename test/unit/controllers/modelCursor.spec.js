@@ -190,7 +190,6 @@
                     var newRow = service.action.insert("Tables");
                     var id = "NEW_ID_1";
                     newRow.id = id;
-                    console.debug(newRow);
                     tableSet.reloadFromServer([{
                             tempID: id
                         }]
