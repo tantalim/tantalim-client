@@ -1,0 +1,106 @@
+html {
+    height: 100%;
+}
+
+body {
+    background-color: #004444;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+}
+
+@media (min-width: 979px) {
+    body {
+        padding-top: 80px;
+    }
+}
+
+.blue {
+    color: #447fc8;
+}
+
+.btn-black {
+    background-color: #222222;
+    background-image: none;
+    color: white;
+    text-shadow: none;
+}
+
+.btn-black:hover {
+    background: #333333;
+    color: white;
+}
+
+#login-wrapper {
+    -webkit-border-radius: 15px;
+    -moz-border-radius: 15px;
+    -ms-border-radius: 15px;
+    -o-border-radius: 15px;
+    border-radius: 15px;
+    -webkit-box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
+    -moz-box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: block;
+    margin-top: -180px;
+    margin-left: -225px;
+    padding: 30px;
+    width: 440px;
+    height: 360px;
+    background: white;
+    text-align: center;
+}
+
+.login-form legend {
+    margin-top: 0px;
+    margin-bottom: 15px;
+    padding-bottom: 2px;
+    white-space: nowrap;
+    font-size: 24px;
+    font-family: 'Lato', Helvetica, sans-serif;
+    font-weight: 300;
+    color: #333333;
+    -webkit-font-smoothing: subpixel-antialiased;
+}
+
+.login-form .body {
+    padding-bottom: 30px;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.login-form .footer {
+    margin-top: 20px;
+}
+
+.login-form .footer .checkbox.inline {
+    display: inline;
+}
+
+.login-form .footer .checkbox.inline input[type="checkbox"] {
+    float: none;
+    margin-top: -4px;
+}
+
+.login-form .footer .btn {
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+    margin-left: 15px;
+    padding: 7px 25px;
+    background-image: none;
+}
+
+.login-form label {
+    font-family: 'Lato', Helvetica, sans-serif;
+    font-size: 20px;
+    color: #333333;
+    font-weight: 300;
+    display: block;
+}
+
+.login-form input {
+    margin-bottom: 20px;
+}
