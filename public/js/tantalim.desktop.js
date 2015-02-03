@@ -328,10 +328,10 @@ angular.module('tantalim.desktop')
             if (!$scope.current) {
                 return false;
             }
-            if ($scope.filterString != $routeParams.filterString) {
+            if ($scope.filterString !== $routeParams.filterString) {
                 return false;
             }
-            if ($scope.pageNumber != $routeParams.pageNumber) {
+            if ($scope.pageNumber !== $routeParams.pageNumber) {
                 return false;
             }
             return true;
@@ -470,6 +470,8 @@ angular.module('tantalim.desktop')
 );
 
 // Source: public/js/page/searchController.js
+/* global _ */
+
 angular.module('tantalim.desktop')
     .controller('SearchController', ['$scope', '$location', 'ModelData',
         function ($scope, $location, ModelData) {
@@ -503,12 +505,12 @@ angular.module('tantalim.desktop')
                         if (filterString.length > 0) {
                             filterString += ' AND ';
                         }
-                        filterString += fieldName + ' ' + $scope.comparators[fieldName] + ' ' + value;
+                        filterString += fieldName + ' ' + comparators[fieldName] + ' ' + value;
                     }
                 });
 
                 $scope.filterString = filterString;
-            }
+            };
 
             $scope.filterString = '';
         }])

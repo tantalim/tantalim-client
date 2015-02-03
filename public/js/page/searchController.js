@@ -1,4 +1,5 @@
 'use strict';
+/* global _ */
 
 angular.module('tantalim.desktop')
     .controller('SearchController', ['$scope', '$location', 'ModelData',
@@ -33,12 +34,12 @@ angular.module('tantalim.desktop')
                         if (filterString.length > 0) {
                             filterString += ' AND ';
                         }
-                        filterString += fieldName + ' ' + $scope.comparators[fieldName] + ' ' + value;
+                        filterString += fieldName + ' ' + comparators[fieldName] + ' ' + value;
                     }
                 });
 
                 $scope.filterString = filterString;
-            }
+            };
 
             $scope.filterString = '';
         }])

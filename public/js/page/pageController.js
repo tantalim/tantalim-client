@@ -64,10 +64,10 @@ angular.module('tantalim.desktop')
             if (!$scope.current) {
                 return false;
             }
-            if ($scope.filterString != $routeParams.filterString) {
+            if ($scope.filterString !== $routeParams.filterString) {
                 return false;
             }
-            if ($scope.pageNumber != $routeParams.pageNumber) {
+            if ($scope.pageNumber !== $routeParams.pageNumber) {
                 return false;
             }
             return true;
