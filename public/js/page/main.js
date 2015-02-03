@@ -34,12 +34,4 @@ angular.module('tantalim.desktop')
                 $scope.menu = d.data;
             });
         }])
-    .controller('SearchController', ['$scope', '$location',
-        function ($scope, $location) {
-            var modelName = '{{model.modelName}}';
-            $scope.submit = function () {
-                $location.path('page/' + modelName);
-            };
-        }])
-
 ;
