@@ -16,6 +16,7 @@ module.exports = function (config) {
             'public/lib/angular/angular.js',
             'public/lib/angular-mocks/angular-mocks.js',
             'public/lib/angular-cookies/angular-cookies.js',
+            'public/lib/mobile-angular-ui/dist/js/mobile-angular-ui.js',
             'public/lib/angular-resource/angular-resource.js',
             'public/lib/angular-route/angular-route.js',
             'public/lib/angular-sanitize/angular-sanitize.js',
@@ -38,7 +39,7 @@ module.exports = function (config) {
         preprocessors: {
             'public/js/common/**/*.js': 'coverage',
             'public/js/page/**/*.js': 'coverage',
-            'public/js/mobile/**/*.js': 'coverage',
+            'public/js/mobile/**/*.js': 'coverage'
         },
 
         // test results reporter to use

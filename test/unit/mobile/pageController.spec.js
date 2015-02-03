@@ -1,6 +1,6 @@
 'use strict';
 
-describe('PageController', function () {
+describe('Mobile PageController', function () {
     var scope,
         ModelDataMock,
         dataResponseMock = {},
@@ -14,7 +14,7 @@ describe('PageController', function () {
             }
         };
 
-    beforeEach(module('tantalim.desktop'));
+    beforeEach(module('tantalim.mobile'));
     beforeEach(inject(function () {
         ModelDataMock = {
             model: {},
@@ -58,11 +58,4 @@ describe('PageController', function () {
         $controller('PageController', {$scope: scope, ModelData: ModelDataMock, PageService: pageServiceMock});
         expect(scope.serverStatus).toBe('');
     }));
-
-    it('should load data', inject(function ($controller) {
-        $controller('PageController', {$scope: scope, ModelData: ModelDataMock, PageService: pageServiceMock});
-        scope.refresh();
-        expect(scope.serverStatus).toBe('');
-    }));
-
 });

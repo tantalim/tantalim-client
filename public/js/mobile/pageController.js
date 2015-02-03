@@ -17,7 +17,6 @@ angular.module('tantalim.mobile')
         }
 
         if (!Global.pageLoaded) {
-            console.info('Starting PageController');
             Global.pageLoaded = true;
             $scope.serverStatus = 'Loading...';
             $scope.serverError = '';
