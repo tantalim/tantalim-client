@@ -37,11 +37,11 @@ angular.module('tantalim.desktop')
         }
 
         function loadData() {
-            Global.pageLoaded = true;
             $scope.serverStatus = 'Loading data...';
             $scope.serverError = '';
             $scope.current = {};
-            PageService.readModelData(ModelData.page.modelName)
+
+            PageService.readModelData(ModelData.page.modelName, $routeParams.filterString, $routeParams.pageNumber)
                 .then(function (d) {
                     $scope.serverStatus = '';
                     if (d.status !== 200) {
@@ -52,26 +52,36 @@ angular.module('tantalim.desktop')
                         $scope.serverError = 'Error reading data from server: ' + d.data.error;
                         return;
                     }
+                    $scope.filterString = $routeParams.filterString;
+                    $scope.pageNumber = $routeParams.pageNumber;
                     ModelCursor.setRoot(ModelData.model, d.data);
                     attachModelCursorToScope();
                 });
+            // TODO Don't reinitialize unless needed
+        }
+
+        function isDataLoaded() {
+            if (!$scope.current) {
+                return false;
+            }
+            if ($scope.filterString != $routeParams.filterString) {
+                return false;
+            }
+            if ($scope.pageNumber != $routeParams.pageNumber) {
+                return false;
+            }
+            return true;
+        }
+
+        if (isDataLoaded()) {
+            attachModelCursorToScope();
+        } else {
+            loadData();
+        }
+
+        if (!PageCursor.initialized) {
             PageCursor.initialize(ModelData.page);
         }
-
-        if (!Global.pageLoaded) {
-            loadData();
-        } else {
-            attachModelCursorToScope();
-        }
-
-        if ($routeParams.subPage) {
-            $scope.visibleView = $routeParams.subPage;
-        } else {
-            $scope.visibleView = ModelData.page.id;
-        }
-        $scope.changeSubPage = function (pageName) {
-            $scope.visibleView = pageName;
-        };
 
         $scope.PageCursor = PageCursor;
         $scope.staticContent = ModelData.staticContent;
@@ -82,7 +92,7 @@ angular.module('tantalim.desktop')
             ModelCursor.change(thisInstance);
         };
 
-        $scope.refresh = function() {
+        $scope.refresh = function () {
             if (ModelCursor.dirty) {
                 $scope.serverStatus = 'Cannot reload data';
                 return;
@@ -102,10 +112,5 @@ angular.module('tantalim.desktop')
         keyboardManager.bind('ctrl+s', function () {
             $scope.save();
         });
-
-        $scope.currentView = null;
-        $scope.gotoAnchor = function(targetID) {
-
-        };
     }
 );

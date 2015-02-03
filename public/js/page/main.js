@@ -7,10 +7,19 @@ angular.module('tantalim.desktop')
             when('/', {
                 templateUrl: '/page/' + pageName + '/html'
             }).
-            when('/p/:subPage', {
+            when('/f/:filterString', {
+                templateUrl: '/page/' + pageName + '/html'
+            }).
+            when('/f/:filterString/p/:pageNumber', {
+                templateUrl: '/page/' + pageName + '/html'
+            }).
+            when('/p/:pageNumber', {
                 templateUrl: '/page/' + pageName + '/html'
             }).
             when('/search', {
+                templateUrl: '/page/' + pageName + '/search'
+            }).
+            when('/search/:filterString', {
                 templateUrl: '/page/' + pageName + '/search'
             }).
             otherwise({

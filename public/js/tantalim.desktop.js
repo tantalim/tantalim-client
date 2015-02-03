@@ -234,10 +234,19 @@ angular.module('tantalim.desktop')
             when('/', {
                 templateUrl: '/page/' + pageName + '/html'
             }).
-            when('/p/:subPage', {
+            when('/f/:filterString', {
+                templateUrl: '/page/' + pageName + '/html'
+            }).
+            when('/f/:filterString/p/:pageNumber', {
+                templateUrl: '/page/' + pageName + '/html'
+            }).
+            when('/p/:pageNumber', {
                 templateUrl: '/page/' + pageName + '/html'
             }).
             when('/search', {
+                templateUrl: '/page/' + pageName + '/search'
+            }).
+            when('/search/:filterString', {
                 templateUrl: '/page/' + pageName + '/search'
             }).
             otherwise({
@@ -300,11 +309,11 @@ angular.module('tantalim.desktop')
         }
 
         function loadData() {
-            Global.pageLoaded = true;
             $scope.serverStatus = 'Loading data...';
             $scope.serverError = '';
             $scope.current = {};
-            PageService.readModelData(ModelData.page.modelName)
+
+            PageService.readModelData(ModelData.page.modelName, $routeParams.filterString, $routeParams.pageNumber)
                 .then(function (d) {
                     $scope.serverStatus = '';
                     if (d.status !== 200) {
@@ -315,26 +324,39 @@ angular.module('tantalim.desktop')
                         $scope.serverError = 'Error reading data from server: ' + d.data.error;
                         return;
                     }
+                    $scope.filterString = $routeParams.filterString;
+                    $scope.pageNumber = $routeParams.pageNumber;
                     ModelCursor.setRoot(ModelData.model, d.data);
                     attachModelCursorToScope();
                 });
+            // TODO Don't reinitialize unless needed
+        }
+
+        function isDataLoaded() {
+            if (!$scope.current) {
+                return false;
+            }
+            if ($scope.filterString != $routeParams.filterString) {
+                console.log('filter String matches, do not load data');
+                return false;
+            }
+            if ($scope.pageNumber != $routeParams.pageNumber) {
+                console.log('filter String matches, do not load data');
+                return false;
+            }
+            return true;
+        }
+
+        if (isDataLoaded()) {
+            attachModelCursorToScope();
+        } else {
+            loadData();
+        }
+
+        console.log('PageCursor.initialized = ', PageCursor.initialized);
+        if (!PageCursor.initialized) {
             PageCursor.initialize(ModelData.page);
         }
-
-        if (!Global.pageLoaded) {
-            loadData();
-        } else {
-            attachModelCursorToScope();
-        }
-
-        if ($routeParams.subPage) {
-            $scope.visibleView = $routeParams.subPage;
-        } else {
-            $scope.visibleView = ModelData.page.id;
-        }
-        $scope.changeSubPage = function (pageName) {
-            $scope.visibleView = pageName;
-        };
 
         $scope.PageCursor = PageCursor;
         $scope.staticContent = ModelData.staticContent;
@@ -345,7 +367,7 @@ angular.module('tantalim.desktop')
             ModelCursor.change(thisInstance);
         };
 
-        $scope.refresh = function() {
+        $scope.refresh = function () {
             if (ModelCursor.dirty) {
                 $scope.serverStatus = 'Cannot reload data';
                 return;
@@ -365,11 +387,6 @@ angular.module('tantalim.desktop')
         keyboardManager.bind('ctrl+s', function () {
             $scope.save();
         });
-
-        $scope.currentView = null;
-        $scope.gotoAnchor = function(targetID) {
-
-        };
     }
 );
 // Source: public/js/page/pageCursor.js
@@ -378,6 +395,18 @@ angular.module('tantalim.desktop')
 angular.module('tantalim.desktop')
     .factory('PageCursor', function ($log) {
         //$log.debug('Starting PageCursor');
+
+        var cursor = {
+            initialized: false,
+            /**
+             * A pointer to the currently selected section. Useful for key binding and such.
+             */
+            current: null,
+            /**
+             * A list of each section on the page
+             */
+            sections: {}
+        };
 
         var SmartSection = function (pageSection) {
             var self = {
@@ -396,64 +425,55 @@ angular.module('tantalim.desktop')
             });
         };
 
-/*
-        var gridOptions = function (view) {
+        /*
+         var gridOptions = function (view) {
 
-            var getDataName = function (view) {
-                return 'ModelCursor.current.sets.' + view.modelName + '.rows';
-            };
+         var getDataName = function (view) {
+         return 'ModelCursor.current.sets.' + view.modelName + '.rows';
+         };
 
-            var getColumnDefs = function (fields) {
-                return _.map(fields, function (field) {
-                    return {
-                        field: 'data.' + field.fieldName,
-                        displayName: field.fieldLabel
-                    };
-                });
-            };
+         var getColumnDefs = function (fields) {
+         return _.map(fields, function (field) {
+         return {
+         field: 'data.' + field.fieldName,
+         displayName: field.fieldLabel
+         };
+         });
+         };
 
-            var selectedItems = [];
+         var selectedItems = [];
 
-            var afterSelectionChange = function(rowItem) {
-                if (selectedItems.length > 0) {
-                    var currentSet = selectedItems[0].nodeSet;
-                    currentSet.moveTo(rowItem.rowIndex);
-                }
-            };
+         var afterSelectionChange = function(rowItem) {
+         if (selectedItems.length > 0) {
+         var currentSet = selectedItems[0].nodeSet;
+         currentSet.moveTo(rowItem.rowIndex);
+         }
+         };
 
-            return {
-                afterSelectionChange: afterSelectionChange,
-//                enableSorting: false,
-//                enableColumnReordering: true,
-                enableColumnResize: true,
-                enableCellEdit: true,
-                enablePinning: true,
-                enableHighlighting: true,
-                showColumnMenu: true,
-                groupsCollapsedByDefault: false,
-                multiSelect: false,
-//                keepLastSelected: false,
-                selectedItems: selectedItems,
-                pagingOptions: { pageSizes: [10, 100, 1000], pageSize: 10, totalServerItems: 55, currentPage: 1 },
-                columnDefs: getColumnDefs(view.listFields),
-                data: getDataName(view)
-            };
-        };
-*/
-
-        var cursor = {
-            /**
-             * A pointer to the currently selected section. Useful for key binding and such.
-             */
-            current: null,
-            /**
-             * A list of each section on the page
-             */
-            sections: {}
-        };
+         return {
+         afterSelectionChange: afterSelectionChange,
+         //                enableSorting: false,
+         //                enableColumnReordering: true,
+         enableColumnResize: true,
+         enableCellEdit: true,
+         enablePinning: true,
+         enableHighlighting: true,
+         showColumnMenu: true,
+         groupsCollapsedByDefault: false,
+         multiSelect: false,
+         //                keepLastSelected: false,
+         selectedItems: selectedItems,
+         pagingOptions: { pageSizes: [10, 100, 1000], pageSize: 10, totalServerItems: 55, currentPage: 1 },
+         columnDefs: getColumnDefs(view.listFields),
+         data: getDataName(view)
+         };
+         };
+         */
 
         cursor.initialize = function (p) {
+            $log.debug('initializing PageCursor');
             new SmartSection(p);
+            cursor.initialized = true;
         };
 
         return cursor;
@@ -467,15 +487,12 @@ angular.module('tantalim.common', []);
 angular.module('tantalim.common')
     .factory('Global', [
         function () {
-            var _this = this;
-            _this._data = {
+            return {
                 pageName: window.pageName,
                 modelName: window.pageName,
                 user: window.user,
                 authenticated: !!window.user
             };
-
-            return _this._data;
         }
     ]);
 
@@ -1067,20 +1084,16 @@ angular.module('tantalim.common')
 angular.module('tantalim.common')
     .factory('PageService', function ($http) {
         return {
-            readModelData: function (modelName) {
-                return $http.get('/data/' + modelName);
-            },
-            queryModelData: function (modelName, query) {
-                //console.info("queryModelData");
-                //console.info(query);
-                var url = '/data/' + modelName;
-                if (angular.isArray(query)) {
-                    url += "?"
-                    _.forEach(query, function (clause) {
-                        url += clause.field + clause.operator + clause.value + "&";
-                    });
-                } else if (query) {
-                    url += '/q/' + query;
+            readModelData: function (modelName, filterString, pageNumber) {
+                var url = '/data/' + modelName + '?';
+                if (filterString) {
+                    url += 'filterString=' + filterString;
+                }
+                if (pageNumber) {
+                    if (filterString) {
+                        url += '&';
+                    }
+                    url += 'pageNumber=' + pageNumber;
                 }
                 return $http.get(url);
             },

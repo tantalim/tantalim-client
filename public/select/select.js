@@ -62,11 +62,7 @@ angular.module('tantalim.select', [])
                             // This works but is ugly. We need a simpler way to get to the data
                             var whereValueModelName = "BuildTable";
                             var value = ModelCursor.current.instances[whereValueModelName].data[whereDefinition.valueField];
-                            return {
-                                "field": whereDefinition.sourceField,
-                                "operator": whereDefinition.operator,
-                                "value": value
-                            };
+                            return whereDefinition.sourceField + ' ' + whereDefinition.operator + ' ' + value;
                         });
                         if (ctrl.items === undefined) {
                             ctrl.loading = true;
