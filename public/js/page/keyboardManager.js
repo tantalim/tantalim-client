@@ -1,5 +1,6 @@
 'use strict';
 
+/* istanbul ignore next */
 angular.module('tantalim.desktop')
     .factory('keyboardManager', ['$window', '$timeout', function ($window, $timeout) {
         var keyboardManagerService = {};
