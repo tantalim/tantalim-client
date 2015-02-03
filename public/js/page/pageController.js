@@ -13,7 +13,6 @@ angular.module('tantalim.desktop')
             $scope.ModelCursor = ModelCursor;
             $scope.current = ModelCursor.current;
             $scope.action = ModelCursor.action;
-            $scope.serverStatus = null;
             keyboardManager.bind('up', function () {
                 if ($scope.currentModel) {
                     $scope.action.previous($scope.currentModel);
