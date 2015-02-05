@@ -8,7 +8,7 @@ angular.module('tantalim.common')
 
             var _self = {
                 convertToDto: function (model, dataSet) {
-                    var modelName = model.data.modelName;
+                    var modelName = model.name;
                     //$log.debug('Starting convertToDto for model ' + modelName);
                     //$log.debug(model);
                     //$log.debug(dataSet);
@@ -42,7 +42,7 @@ angular.module('tantalim.common')
                         parentInstance.children = {};
 
                         _.forEach(model.children, function (childModel) {
-                            var childModelName = childModel.data.modelName;
+                            var childModelName = childModel.name;
                             var dtoRows = _self.convertToDto(childModel, instance.childModels[childModelName]);
                             if (dtoRows.length > 0) {
                                 parentInstance.children[childModelName] = dtoRows;
@@ -120,7 +120,7 @@ angular.module('tantalim.common')
                     rootSet = _rootSet;
                     $log.debug('Starting ModelSaver.save');
                     var dtoRows = _self.convertToDto(model, rootSet);
-                    _self.sendData(model.data.modelName, dtoRows, success);
+                    _self.sendData(model.name, dtoRows, success);
                 }
             };
             return _self;

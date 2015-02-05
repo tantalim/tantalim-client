@@ -24,7 +24,7 @@ angular.module('tantalim.common')
                 if (model && model.data) {
                     //console.debug(model);
                     //console.debug(parentName);
-                    var modelName = model.data.modelName;
+                    var modelName = model.name;
                     modelMap[modelName] = model;
                     model.parent = parentName;
                     _.forEach(model.children, function (childModel) {
@@ -57,7 +57,7 @@ angular.module('tantalim.common')
                     };
 
                     _.forEach(thisModel.children, function (childModel) {
-                        var childModelName = childModel.data.modelName;
+                        var childModelName = childModel.name;
                         var childSet = getNextSet(childModelName);
                         resetCurrents(childSet, childModelName);
                     });
@@ -154,14 +154,14 @@ angular.module('tantalim.common')
                 }
 
                 newInstance.addChildModel = function(childModel, childDataSet) {
-                    var modelName = childModel.data.modelName;
+                    var modelName = childModel.name;
                     var smartSet = new SmartNodeSet(childModel, childDataSet, newInstance);
                     newInstance.childModels[modelName] = smartSet;
                 };
 
                 if (row.children) {
                     _.forEach(model.children, function(childModel) {
-                        var modelName = childModel.data.modelName;
+                        var modelName = childModel.name;
                         newInstance.addChildModel(childModel, row.children[modelName]);
                     });
                 }
@@ -170,8 +170,8 @@ angular.module('tantalim.common')
             };
 
             var SmartNodeSet = function (model, data, parentInstance) {
-                //console.debug('Adding SmartNodeSet for ' + model.data.modelName);
-                //console.debug(model);
+                console.debug('Adding SmartNodeSet for ' + model.name);
+                console.debug(model);
                 var defaults = {
                     _type: 'SmartNodeSet',
                     model: {
@@ -326,7 +326,7 @@ angular.module('tantalim.common')
                 };
 
                 var newSet = _.defaults({}, defaults);
-                newSet.model.modelName = model.data.modelName;
+                newSet.model.modelName = model.name;
                 newSet.model.orderBy = model.orderBy;
                 newSet.parentInstance = parentInstance;
                 newSet.insert = function () {
@@ -378,6 +378,7 @@ angular.module('tantalim.common')
                     self.root = rootSet;
                     resetCurrents(rootSet);
                     self.current = current;
+                    self.dirty = false;
                 },
                 getCurrentInstance: function (modelName) {
                     return current.instances[modelName];

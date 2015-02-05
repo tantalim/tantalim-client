@@ -6,6 +6,9 @@ angular.module('tantalim.desktop')
         if (ModelData.error) {
             $scope.serverStatus = '';
             $scope.serverError = ModelData.error;
+            if (ModelData.message) {
+                $scope.serverError += ': ' + ModelData.message;
+            }
             return;
         }
 
@@ -92,8 +95,8 @@ angular.module('tantalim.desktop')
         };
 
         $scope.refresh = function () {
-            if (ModelCursor.dirty) {
-                $scope.serverStatus = 'Cannot reload data';
+            if (ModelCursor.dirty && !$scope.serverStatus) {
+                $scope.serverStatus = 'There are unsaved changes. Click [Refresh] again to discard those changes.';
                 return;
             }
             loadData();
