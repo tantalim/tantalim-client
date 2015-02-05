@@ -410,10 +410,10 @@ angular.module('tantalim.common')
                 },
                 action: {
                     length: function (modelName) {
-                        if (modelName in current.sets) {
-                            return current.sets[modelName].rows.length;
+                        if (_.isEmpty(current.sets[modelName])) {
+                            return 0;
                         }
-                        return 0;
+                        return current.sets[modelName].rows.length;
                     },
                     insert: function (modelName) {
                         var newInstance = self.getCurrentSet(modelName).insert();
