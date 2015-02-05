@@ -379,6 +379,10 @@ angular.module('tantalim.desktop')
         keyboardManager.bind('ctrl+s', function () {
             $scope.save();
         });
+        keyboardManager.bind('ctrl+shift+d', function () {
+            console.log('DEBUGGING');
+            ModelCursor.toConsole();
+        });
     }
 );
 // Source: public/js/page/pageCursor.js
@@ -573,15 +577,16 @@ angular.module('tantalim.common')
             clear();
 
             var fillModelMap = function (model, parentName) {
-                if (model && model.data) {
-                    //console.debug(model);
-                    //console.debug(parentName);
-                    var modelName = model.name;
+                var modelName = model.name;
+                if (modelName) {
+                    console.log('fillModelMap for ' + modelName);
                     modelMap[modelName] = model;
                     model.parent = parentName;
                     _.forEach(model.children, function (childModel) {
                         fillModelMap(childModel, modelName);
                     });
+                } else {
+                    console.warn('failed to fill modelMap for ', model);
                 }
             };
 
@@ -922,7 +927,7 @@ angular.module('tantalim.common')
                     //$log.debug(data);
                     clear();
                     if (_.isEmpty(model)) {
-                        //console.log("setRoot called with empty model, exiting");
+                        console.log("setRoot called with empty model, exiting");
                         return;
                     }
                     fillModelMap(model);
@@ -931,6 +936,7 @@ angular.module('tantalim.common')
                     resetCurrents(rootSet);
                     self.current = current;
                     self.dirty = false;
+                    console.log('setRoot done: current=', current);
                 },
                 getCurrentInstance: function (modelName) {
                     return current.instances[modelName];
@@ -947,6 +953,11 @@ angular.module('tantalim.common')
                     return current.sets[modelName];
                 },
                 dirty: false,
+                toConsole: function() {
+                    console.log('ModelCursor.rootSet', self.root);
+                    console.log('ModelCursor.modelMap', modelMap);
+                    console.log('ModelCursor.current', self.current);
+                },
                 change: function (instance) {
                     if (instance.state === 'NO_CHANGE' || instance.state === 'CHILD_UPDATED') {
                         instance.state = 'UPDATED';

@@ -114,5 +114,9 @@ angular.module('tantalim.desktop')
         keyboardManager.bind('ctrl+s', function () {
             $scope.save();
         });
+        keyboardManager.bind('ctrl+shift+d', function () {
+            console.log('DEBUGGING');
+            ModelCursor.toConsole();
+        });
     }
 );
