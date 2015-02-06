@@ -69,9 +69,20 @@ angular.module('tantalim.select', [])
                             if (ctrl.filter) {
                                 //whereClause.push({ctrl.filter});
                             }
-                            _promise = PageService.queryModelData(itemModel, whereClause).then(function (d) {
-                                ctrl.items = d.data;
+                            _promise = PageService.readModelData(itemModel, whereClause).then(function (d) {
                                 ctrl.loading = false;
+                                if (d.status !== 200) {
+                                    // TODO Need to figure out how to bubble up these error messages to global
+                                    $scope.serverError = 'Failed to reach server. Try refreshing.';
+                                    console.error(d);
+                                    return;
+                                }
+                                if (d.data.error) {
+                                    $scope.serverError = 'Error reading data from server: ' + d.data.error;
+                                    console.error(d);
+                                    return;
+                                }
+                                ctrl.items = d.data;
                                 openItems();
                             });
                         } else {
