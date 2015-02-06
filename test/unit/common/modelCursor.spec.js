@@ -13,7 +13,7 @@
         describe('WithSingleModel', function () {
             beforeEach(function () {
                 sampleModel = {
-                    data: {modelName: 'Tables'},
+                    name: 'Tables',
                     orderBy: 'TableName'
                 };
                 sampleList = [
@@ -119,7 +119,7 @@
 
                 it('should default the field value to 1', function () {
                     sampleModel = {
-                        data: {modelName: 'Tables'},
+                        name: 'Tables',
                         fields: [
                             {
                                 "fieldName": "TableType1",
@@ -144,7 +144,7 @@
 
                 it('should default the field value to 2', function () {
                     sampleModel = {
-                        data: {modelName: 'Tables'},
+                        name: 'Tables',
                         fields: [
                             {
                                 "fieldName": "TableName",
@@ -201,7 +201,7 @@
         describe('WithParentChildModel', function () {
             beforeEach(function () {
                 sampleModel = {
-                    data: {modelName: 'Tables'},
+                    name: 'Tables',
                     orderBy: 'TableName',
                     fields: [
                         {
@@ -210,7 +210,7 @@
                     ],
                     children: [
                         {
-                            data: {modelName: 'Columns'},
+                            name: 'Columns',
                             fields: [
                                 {
                                     "fieldName": "ColumnName"

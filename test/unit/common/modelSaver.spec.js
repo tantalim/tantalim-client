@@ -11,7 +11,7 @@
 
         it('should do nothing with nothing', function () {
             var model = {
-                data: { modelName: 'Test' }
+                name: 'Test'
             };
 
             var dto = service.convertToDto(model, {});
@@ -20,7 +20,7 @@
 
         it('should do nothing with no changes', function () {
             var model = {
-                data: { modelName: 'Test' }
+                name: 'Test'
             };
 
             var dto = service.convertToDto(model, {
@@ -40,7 +40,7 @@
 
         describe('CUD Single Row', function () {
             var model = {
-                data: { modelName: 'Test' }
+                name: 'Test'
             };
 
             var defaultData = function () {
@@ -107,12 +107,8 @@
 
         describe('CUD Child Row', function () {
             var model = {
-                data: { modelName: 'ParentModel' },
-                children: [
-                    {
-                        data: { modelName: 'ChildModel' }
-                    }
-                ]
+                name: 'ParentModel',
+                children: [{name: 'ChildModel'}]
             };
 
             var defaultData = function () {
@@ -175,13 +171,13 @@
 
         describe('CUD Grandchild Row', function () {
             var model = {
-                data: { modelName: 'ParentModel' },
+                data: {modelName: 'ParentModel'},
                 children: [
                     {
-                        data: { modelName: 'ChildModel' },
+                        data: {modelName: 'ChildModel'},
                         children: [
                             {
-                                data: { modelName: 'GrandChildModel' }
+                                data: {modelName: 'GrandChildModel'}
                             }
                         ]
                     }
@@ -249,4 +245,4 @@
 
     });
 })
-    ();
+();

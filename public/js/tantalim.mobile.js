@@ -305,8 +305,8 @@ angular.module('tantalim.common')
             };
 
             var SmartNodeSet = function (model, data, parentInstance) {
-                console.debug('Adding SmartNodeSet for ' + model.name);
-                console.debug(model);
+                //console.debug('Adding SmartNodeSet for ' + model.name);
+                //console.debug(model);
                 var defaults = {
                     _type: 'SmartNodeSet',
                     model: {
@@ -436,8 +436,7 @@ angular.module('tantalim.common')
                                         row.data = modifiedRow.data;
                                         row.id = modifiedRow.id;
                                     } else {
-                                        console.error('Failed to find matching inserted row');
-                                        console.error(row);
+                                        console.error('Failed to find matching inserted row', row);
                                     }
                                     break;
                                 case 'UPDATED':
@@ -449,8 +448,7 @@ angular.module('tantalim.common')
                                         row.state = 'NO_CHANGE';
                                         row.data = modifiedRow.data;
                                     } else {
-                                        console.error('Failed to find matching updated row');
-                                        console.error(row);
+                                        console.error('Failed to find matching updated row', row);
                                     }
                                     break;
                             }
@@ -505,7 +503,7 @@ angular.module('tantalim.common')
                     //$log.debug(data);
                     clear();
                     if (_.isEmpty(model)) {
-                        console.log("setRoot called with empty model, exiting");
+                        console.warn("setRoot called with empty model, exiting");
                         return;
                     }
                     fillModelMap(model);
@@ -514,7 +512,7 @@ angular.module('tantalim.common')
                     resetCurrents(rootSet);
                     self.current = current;
                     self.dirty = false;
-                    console.log('setRoot done: current=', current);
+                    //console.log('setRoot done: current=', current);
                 },
                 getCurrentInstance: function (modelName) {
                     return current.instances[modelName];
