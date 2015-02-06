@@ -15,9 +15,6 @@ angular.module('tantalim.common')
                     url += 'pageNumber=' + pageNumber;
                 }
                 return $http.get(url);
-            },
-            getMenu: function () {
-                return $http.get('/menu/');
             }
         };
     });

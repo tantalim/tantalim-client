@@ -255,13 +255,6 @@ angular.module('tantalim.desktop')
             });
     }
     ])
-    .controller('HeaderController', ['$scope', 'Global', 'PageService',
-        function ($scope, Global, service) {
-            $scope.global = Global;
-            service.getMenu().then(function (d) {
-                $scope.menu = d.data;
-            });
-        }])
 ;
 
 // Source: public/js/page/pageController.js
@@ -269,6 +262,7 @@ angular.module('tantalim.desktop')
     .controller('PageController',
     function ($scope, $routeParams, Global, ModelData, PageService, ModelCursor, ModelSaver, PageCursor, keyboardManager) {
         if (ModelData.error) {
+            console.error('Error retrieving ModelData: ', ModelData.error);
             $scope.serverStatus = '';
             $scope.serverError = ModelData.error;
             if (ModelData.message) {
@@ -1144,9 +1138,6 @@ angular.module('tantalim.common')
                     url += 'pageNumber=' + pageNumber;
                 }
                 return $http.get(url);
-            },
-            getMenu: function () {
-                return $http.get('/menu/');
             }
         };
     });

@@ -4,6 +4,7 @@ angular.module('tantalim.desktop')
     .controller('PageController',
     function ($scope, $routeParams, Global, ModelData, PageService, ModelCursor, ModelSaver, PageCursor, keyboardManager) {
         if (ModelData.error) {
+            console.error('Error retrieving ModelData: ', ModelData.error);
             $scope.serverStatus = '';
             $scope.serverError = ModelData.error;
             if (ModelData.message) {

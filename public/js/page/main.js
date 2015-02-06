@@ -27,11 +27,4 @@ angular.module('tantalim.desktop')
             });
     }
     ])
-    .controller('HeaderController', ['$scope', 'Global', 'PageService',
-        function ($scope, Global, service) {
-            $scope.global = Global;
-            service.getMenu().then(function (d) {
-                $scope.menu = d.data;
-            });
-        }])
 ;
