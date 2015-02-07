@@ -80,8 +80,7 @@ body {
 }
 
 .login-form .footer .checkbox.inline input[type="checkbox"] {
-    float: none;
-    margin-top: -4px;
+    margin-top: 8px;
 }
 
 .login-form .footer .btn {
