@@ -13,5 +13,6 @@
 .bower*
 !.bowerrc
 public/lib
+bower_components
 node_modules
 test/coverage
