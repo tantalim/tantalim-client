@@ -57,7 +57,7 @@ angular.module('tantalim.mobile')
 
         $scope.isActive = function (menuItem) {
             return menuItem === Global.pageName;
-        }
+        };
 
         $scope.rowChanged = function (thisInstance) {
             ModelCursor.change(thisInstance);
