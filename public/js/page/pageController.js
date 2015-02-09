@@ -110,6 +110,19 @@ angular.module('tantalim.desktop')
                     $scope.action.insert($scope.currentModel);
                 }
             });
+            keyboardManager.bind('shift+up', function () {
+                var currentPage = searchController.page() || 1;
+                if (currentPage > 1) {
+                    searchController.page(currentPage - 1);
+                }
+            });
+            keyboardManager.bind('shift+down', function () {
+                var currentPage = searchController.page() || 1;
+                var maxPages = 999; // TODO get the max from server
+                if (currentPage < maxPages) {
+                    searchController.page(currentPage + 1);
+                }
+            });
 
             keyboardManager.bind('ctrl+s', function () {
                 $scope.save();
