@@ -19,10 +19,10 @@ angular.module('tantalim.desktop')
 
         var SmartSection = function (pageSection) {
             var self = {
-                id: pageSection.id,
+                name: pageSection.name,
                 viewMode: pageSection.viewMode || 'single'
             };
-            cursor.sections[pageSection.id] = self;
+            cursor.sections[pageSection.name] = self;
 
             _.forEach(pageSection.children, function (child) {
                 new SmartSection(child);
@@ -33,51 +33,6 @@ angular.module('tantalim.desktop')
                 new SmartSection(child);
             });
         };
-
-        /*
-         var gridOptions = function (view) {
-
-         var getDataName = function (view) {
-         return 'ModelCursor.current.sets.' + view.modelName + '.rows';
-         };
-
-         var getColumnDefs = function (fields) {
-         return _.map(fields, function (field) {
-         return {
-         field: 'data.' + field.fieldName,
-         displayName: field.fieldLabel
-         };
-         });
-         };
-
-         var selectedItems = [];
-
-         var afterSelectionChange = function(rowItem) {
-         if (selectedItems.length > 0) {
-         var currentSet = selectedItems[0].nodeSet;
-         currentSet.moveTo(rowItem.rowIndex);
-         }
-         };
-
-         return {
-         afterSelectionChange: afterSelectionChange,
-         //                enableSorting: false,
-         //                enableColumnReordering: true,
-         enableColumnResize: true,
-         enableCellEdit: true,
-         enablePinning: true,
-         enableHighlighting: true,
-         showColumnMenu: true,
-         groupsCollapsedByDefault: false,
-         multiSelect: false,
-         //                keepLastSelected: false,
-         selectedItems: selectedItems,
-         pagingOptions: { pageSizes: [10, 100, 1000], pageSize: 10, totalServerItems: 55, currentPage: 1 },
-         columnDefs: getColumnDefs(view.listFields),
-         data: getDataName(view)
-         };
-         };
-         */
 
         cursor.initialize = function (p) {
             $log.debug('initializing PageCursor');

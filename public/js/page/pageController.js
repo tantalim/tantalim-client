@@ -3,9 +3,25 @@
 
 angular.module('tantalim.desktop')
     .controller('PageController',
-    function ($scope, $routeParams, $location, Global, PageDefinition, PageService, ModelCursor, ModelSaver, PageCursor, keyboardManager) {
+    function ($scope, $location, Global, PageDefinition, PageService, ModelCursor, ModelSaver, PageCursor, keyboardManager) {
+        console.info('Starting PageController');
         $scope.showLoadingScreen = true;
-        $scope.searchMode = false;
+        var searchPath = '/search';
+        var _searchMode = $location.path() === searchPath;
+        console.log('path', $location.path());
+        $scope.searchMode = function(newValue) {
+            if (newValue) {
+                newValue = (newValue);
+                _searchMode = newValue;
+                if (_searchMode) {
+                    $location.path(searchPath);
+                } else {
+                    $location.path('/');
+                }
+            }
+            console.log('searchMode', _searchMode);
+            return _searchMode;
+        };
         if (PageDefinition.error) {
             console.error('Error retrieving PageDefinition: ', PageDefinition.error);
             $scope.serverStatus = '';
@@ -15,6 +31,34 @@ angular.module('tantalim.desktop')
             }
             return;
         }
+        if (!PageDefinition.page.model) {
+            $scope.serverError = PageDefinition.page.name + ' page does not have a model defined.';
+            return;
+        }
+
+        $scope.mode = function(newMode) {
+            if (newMode) {
+                $location.search('mode', newMode);
+            }
+            var oldMode = $location.search().mode;
+            if (!oldMode)
+                return '';
+        };
+
+        var pageParams = {
+                filter: function (newFilter) {
+                    if (newFilter) {
+                        $location.search('f', newFilter);
+                    }
+                    return $location.search().f;
+                },
+                page: function (newPage) {
+                    if (newPage) {
+                        $location.search('p', newPage);
+                    }
+                    return $location.search().p;
+                }
+        };
 
         function attachModelCursorToScope() {
             $scope.ModelCursor = ModelCursor;
@@ -47,8 +91,8 @@ angular.module('tantalim.desktop')
             $scope.serverError = '';
             $scope.current = {};
 
-            console.log('Searching', $routeParams);
-            PageService.readModelData(PageDefinition.page.model.name, $routeParams.filterString, $routeParams.pageNumber)
+            console.log('Searching', $location.search());
+            PageService.readModelData(PageDefinition.page.model.name, pageParams.filter(), pageParams.page())
                 .then(function (d) {
                     $scope.serverStatus = '';
                     if (d.status !== 200) {
@@ -59,12 +103,12 @@ angular.module('tantalim.desktop')
                         $scope.serverError = 'Error reading data from server: ' + d.data.error;
                         return;
                     }
-                    $scope.filterString = $routeParams.filterString;
-                    $scope.pageNumber = $routeParams.pageNumber;
+                    $scope.filterString = pageParams.filter();
+                    $scope.pageNumber = pageParams.page();
                     ModelCursor.setRoot(PageDefinition.page.model, d.data);
                     attachModelCursorToScope();
                     $scope.showLoadingScreen = false;
-                    $scope.searchMode = false;
+                    _searchMode = false;
                 });
             // TODO Don't reinitialize unless needed
         }
@@ -73,16 +117,16 @@ angular.module('tantalim.desktop')
             if (!$scope.current) {
                 return false;
             }
-            if ($scope.filterString !== $routeParams.filterString) {
+            if ($scope.filterString !== pageParams.filter()) {
                 return false;
             }
-            if ($scope.pageNumber !== $routeParams.pageNumber) {
+            if ($scope.pageNumber !== pageParams.page()) {
                 return false;
             }
             return true;
         }
 
-        if (isDataLoaded()) {
+        if (!_searchMode && isDataLoaded()) {
             attachModelCursorToScope();
         } else {
             loadData();
@@ -124,48 +168,48 @@ angular.module('tantalim.desktop')
         keyboardManager.bind('ctrl+shift+d', function () {
             console.log('DEBUGGING');
             ModelCursor.toConsole();
+            PageCursor.toConsole();
         });
 
 
         (function initializeSearchPage() {
-            $scope.values = {};
-            $scope.comparators = {};
+            $scope.filterValues = {};
+            $scope.filterComparators = {};
 
             _.forEach(PageDefinition.page.model.fields, function (field) {
-                $scope.comparators[field.name] = 'Contains';
+                $scope.filterComparators[field.name] = 'Contains';
             });
 
-            console.log('comparators = ', $scope.comparators);
-
-            $scope.submit = function () {
+            $scope.runSearch = function () {
                 if ($scope.filterString) {
-                    $location.path('/f/' + $scope.filterString);
+                    pageParams.filter($scope.filterString);
                 } else {
-                    $location.path('/');
+                    $location.search({});
                 }
+                $location.path('/');
                 loadData();
             };
             $scope.cancel = function () {
                 $location.path('/');
             };
 
-            $scope.$watch('values', function (newVal) {
-                setFilterString(newVal, $scope.comparators);
+            $scope.$watch('filterValues', function (newVal) {
+                setFilterString(newVal, $scope.filterComparators);
             }, true);
 
-            $scope.$watch('comparators', function (newVal) {
-                setFilterString($scope.values, newVal);
+            $scope.$watch('filterComparators', function (newVal) {
+                setFilterString($scope.filterValues, newVal);
             }, true);
 
-            var setFilterString = function (values, comparators) {
+            var setFilterString = function (filterValues, filterComparators) {
                 var filterString = '';
 
-                _.forEach($scope.values, function (value, fieldName) {
+                _.forEach($scope.filterValues, function (value, fieldName) {
                     if (value) {
                         if (filterString.length > 0) {
                             filterString += ' AND ';
                         }
-                        filterString += fieldName + ' ' + comparators[fieldName] + ' ' + value;
+                        filterString += fieldName + ' ' + filterComparators[fieldName] + ' ' + value;
                     }
                 });
 

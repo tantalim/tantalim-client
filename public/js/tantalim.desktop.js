@@ -266,15 +266,7 @@ angular.module('tantalim.desktop')
 angular.module('tantalim.desktop')
     .controller('PageController',
     function ($scope, $location, Global, PageDefinition, PageService, ModelCursor, ModelSaver, PageCursor, keyboardManager) {
-        window.trevor = $location;
-        $scope.$location = {};
-        angular.forEach("protocol host port path search hash".split(" "), function(method){
-            $scope.$location[method] = function(){
-                var result = $location[method].call($location);
-                return angular.isObject(result) ? angular.toJson(result) : result;
-            };
-        });
-
+        console.info('Starting PageController');
         $scope.showLoadingScreen = true;
         var searchPath = '/search';
         var _searchMode = $location.path() === searchPath;
@@ -316,12 +308,6 @@ angular.module('tantalim.desktop')
         };
 
         var pageParams = {
-                mode: function (newFilter) {
-                    if (newFilter) {
-                        $location.search('mode', newFilter);
-                    }
-                    return $location.search().f;
-                },
                 filter: function (newFilter) {
                     if (newFilter) {
                         $location.search('f', newFilter);
@@ -384,7 +370,7 @@ angular.module('tantalim.desktop')
                     ModelCursor.setRoot(PageDefinition.page.model, d.data);
                     attachModelCursorToScope();
                     $scope.showLoadingScreen = false;
-                    //searchMode = false;
+                    _searchMode = false;
                 });
             // TODO Don't reinitialize unless needed
         }
@@ -402,7 +388,7 @@ angular.module('tantalim.desktop')
             return true;
         }
 
-        if (isDataLoaded()) {
+        if (!_searchMode && isDataLoaded()) {
             attachModelCursorToScope();
         } else {
             loadData();
@@ -449,42 +435,43 @@ angular.module('tantalim.desktop')
 
 
         (function initializeSearchPage() {
-            $scope.values = {};
-            $scope.comparators = {};
+            $scope.filterValues = {};
+            $scope.filterComparators = {};
 
             _.forEach(PageDefinition.page.model.fields, function (field) {
-                $scope.comparators[field.name] = 'Contains';
+                $scope.filterComparators[field.name] = 'Contains';
             });
 
-            $scope.submit = function () {
+            $scope.runSearch = function () {
                 if ($scope.filterString) {
-                    $location.path('/f/' + $scope.filterString);
+                    pageParams.filter($scope.filterString);
                 } else {
-                    $location.path('/');
+                    $location.search({});
                 }
+                $location.path('/');
                 loadData();
             };
             $scope.cancel = function () {
                 $location.path('/');
             };
 
-            $scope.$watch('values', function (newVal) {
-                setFilterString(newVal, $scope.comparators);
+            $scope.$watch('filterValues', function (newVal) {
+                setFilterString(newVal, $scope.filterComparators);
             }, true);
 
-            $scope.$watch('comparators', function (newVal) {
-                setFilterString($scope.values, newVal);
+            $scope.$watch('filterComparators', function (newVal) {
+                setFilterString($scope.filterValues, newVal);
             }, true);
 
-            var setFilterString = function (values, comparators) {
+            var setFilterString = function (filterValues, filterComparators) {
                 var filterString = '';
 
-                _.forEach($scope.values, function (value, fieldName) {
+                _.forEach($scope.filterValues, function (value, fieldName) {
                     if (value) {
                         if (filterString.length > 0) {
                             filterString += ' AND ';
                         }
-                        filterString += fieldName + ' ' + comparators[fieldName] + ' ' + value;
+                        filterString += fieldName + ' ' + filterComparators[fieldName] + ' ' + value;
                     }
                 });
 
