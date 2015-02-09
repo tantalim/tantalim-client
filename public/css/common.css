@@ -1,3 +1,6 @@
+body {
+}
+
 .nav, .pagination, .carousel, .panel-title a {
     cursor: pointer;
 }
@@ -7,27 +10,15 @@
     margin-left: 0
 }
 
+#loading {
+    background-color: #DDDDDD;
+    margin-top: 140px;
+}
+
 .content {
     margin-top: 70px;
     margin-bottom: 70px;
     width: 100%;
-}
-
-#toc {
-    background-color: #EEE;
-    padding: 0;
-    /*position: absolute;*/
-    /*top: 80px;*/
-    position: fixed;
-    top: 100px;
-    z-index: 10;
-}
-
-#toc.ui-scrollfix {
-}
-
-#toc .btn {
-    text-align: left;
 }
 
 #server-status, #server-error {

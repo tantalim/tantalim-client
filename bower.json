@@ -13,6 +13,7 @@
   "dependencies": {
     "lodash": "3.1.0",
     "bootstrap": "~3.3.2",
+    "fontawesome": "~4.3.0",
     "mobile-angular-ui": "~1.2.0",
     "angular-bootstrap": "0.12.0",
     "angular-grid": "2.0.14",

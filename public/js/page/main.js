@@ -17,10 +17,7 @@ angular.module('tantalim.desktop')
                 templateUrl: '/page/' + pageName + '/html'
             }).
             when('/search', {
-                templateUrl: '/page/' + pageName + '/search'
-            }).
-            when('/search/:filterString', {
-                templateUrl: '/page/' + pageName + '/search'
+                templateUrl: '/page/' + pageName + '/html'
             }).
             otherwise({
                 redirectTo: '/'
