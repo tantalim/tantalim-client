@@ -3,25 +3,8 @@
 
 angular.module('tantalim.desktop')
     .controller('PageController',
-    function ($scope, $location, Global, PageDefinition, PageService, ModelCursor, ModelSaver, PageCursor, keyboardManager) {
-        console.info('Starting PageController');
+    function ($scope, $location, PageDefinition, PageService, ModelCursor, ModelSaver, PageCursor, keyboardManager) {
         $scope.showLoadingScreen = true;
-        var searchPath = '/search';
-        var _searchMode = $location.path() === searchPath;
-        console.log('path', $location.path());
-        $scope.searchMode = function(newValue) {
-            if (newValue) {
-                newValue = (newValue);
-                _searchMode = newValue;
-                if (_searchMode) {
-                    $location.path(searchPath);
-                } else {
-                    $location.path('/');
-                }
-            }
-            console.log('searchMode', _searchMode);
-            return _searchMode;
-        };
         if (PageDefinition.error) {
             console.error('Error retrieving PageDefinition: ', PageDefinition.error);
             $scope.serverStatus = '';
@@ -36,16 +19,20 @@ angular.module('tantalim.desktop')
             return;
         }
 
-        $scope.mode = function(newMode) {
-            if (newMode) {
-                $location.search('mode', newMode);
-            }
-            var oldMode = $location.search().mode;
-            if (!oldMode)
-                return '';
-        };
-
-        var pageParams = {
+        function SearchController() {
+            var searchPath = '/search';
+            var self = {
+                showSearch: $location.path() === searchPath,
+                turnSearchOn: function () {
+                    $location.path(searchPath);
+                    self.showSearch = true;
+                },
+                turnSearchOff: function () {
+                    console.info('turnSearchOff');
+                    $location.path('/');
+                    self.showSearch = false;
+                    console.info('done');
+                },
                 filter: function (newFilter) {
                     if (newFilter) {
                         $location.search('f', newFilter);
@@ -58,33 +45,11 @@ angular.module('tantalim.desktop')
                     }
                     return $location.search().p;
                 }
-        };
-
-        function attachModelCursorToScope() {
-            $scope.ModelCursor = ModelCursor;
-            $scope.current = ModelCursor.current;
-            $scope.action = ModelCursor.action;
-            keyboardManager.bind('up', function () {
-                if ($scope.currentModel) {
-                    $scope.action.previous($scope.currentModel);
-                }
-            });
-            keyboardManager.bind('down', function () {
-                if ($scope.currentModel) {
-                    $scope.action.next($scope.currentModel);
-                }
-            });
-            keyboardManager.bind('ctrl+d', function () {
-                if ($scope.currentModel) {
-                    $scope.action.delete($scope.currentModel);
-                }
-            });
-            keyboardManager.bind('ctrl+n', function () {
-                if ($scope.currentModel) {
-                    $scope.action.insert($scope.currentModel);
-                }
-            });
+            };
+            return self;
         }
+        var searchController = new SearchController();
+        $scope.searchController = searchController;
 
         function loadData() {
             $scope.serverStatus = 'Loading data...';
@@ -92,7 +57,7 @@ angular.module('tantalim.desktop')
             $scope.current = {};
 
             console.log('Searching', $location.search());
-            PageService.readModelData(PageDefinition.page.model.name, pageParams.filter(), pageParams.page())
+            PageService.readModelData(PageDefinition.page.model.name, searchController.filter(), searchController.page())
                 .then(function (d) {
                     $scope.serverStatus = '';
                     if (d.status !== 200) {
@@ -103,33 +68,37 @@ angular.module('tantalim.desktop')
                         $scope.serverError = 'Error reading data from server: ' + d.data.error;
                         return;
                     }
-                    $scope.filterString = pageParams.filter();
-                    $scope.pageNumber = pageParams.page();
+                    $scope.filterString = searchController.filter();
+                    $scope.pageNumber = searchController.page();
                     ModelCursor.setRoot(PageDefinition.page.model, d.data);
-                    attachModelCursorToScope();
+
+                    $scope.ModelCursor = ModelCursor;
+                    $scope.current = ModelCursor.current;
+                    $scope.action = ModelCursor.action;
+                    keyboardManager.bind('up', function () {
+                        if ($scope.currentModel) {
+                            $scope.action.previous($scope.currentModel);
+                        }
+                    });
+                    keyboardManager.bind('down', function () {
+                        if ($scope.currentModel) {
+                            $scope.action.next($scope.currentModel);
+                        }
+                    });
+                    keyboardManager.bind('ctrl+d', function () {
+                        if ($scope.currentModel) {
+                            $scope.action.delete($scope.currentModel);
+                        }
+                    });
+                    keyboardManager.bind('ctrl+n', function () {
+                        if ($scope.currentModel) {
+                            $scope.action.insert($scope.currentModel);
+                        }
+                    });
+                    searchController.turnSearchOff();
                     $scope.showLoadingScreen = false;
-                    _searchMode = false;
                 });
             // TODO Don't reinitialize unless needed
-        }
-
-        function isDataLoaded() {
-            if (!$scope.current) {
-                return false;
-            }
-            if ($scope.filterString !== pageParams.filter()) {
-                return false;
-            }
-            if ($scope.pageNumber !== pageParams.page()) {
-                return false;
-            }
-            return true;
-        }
-
-        if (!_searchMode && isDataLoaded()) {
-            attachModelCursorToScope();
-        } else {
-            loadData();
         }
 
         if (!PageCursor.initialized) {
@@ -137,9 +106,13 @@ angular.module('tantalim.desktop')
         }
 
         $scope.PageCursor = PageCursor;
-        $scope.staticContent = PageDefinition.staticContent;
         $scope.currentModel = PageDefinition.currentModel;
-        Global.modelName = $scope.currentModel;
+
+        if (searchController.showSearch) {
+            $scope.showLoadingScreen = false;
+        } else {
+            loadData();
+        }
 
         $scope.rowChanged = function (thisInstance) {
             ModelCursor.change(thisInstance);
@@ -182,15 +155,11 @@ angular.module('tantalim.desktop')
 
             $scope.runSearch = function () {
                 if ($scope.filterString) {
-                    pageParams.filter($scope.filterString);
+                    searchController.filter($scope.filterString);
                 } else {
                     $location.search({});
                 }
-                $location.path('/');
                 loadData();
-            };
-            $scope.cancel = function () {
-                $location.path('/');
             };
 
             $scope.$watch('filterValues', function (newVal) {
