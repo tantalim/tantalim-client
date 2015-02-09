@@ -228,30 +228,36 @@ angular.module('tantalim.desktop')
     }]);
 
 // Source: public/js/page/main.js
+/* global pageName */
+/**
+ * Including `pageName` here from the global namespace. Tried to inject PageDefinition here but for some reason it didn't work.
+ */
+
 angular.module('tantalim.desktop')
-    .config(['$routeProvider', function ($routeProvider) {
-        var pageName = window.pageName;
-        $routeProvider.
-            when('/', {
-                templateUrl: '/page/' + pageName + '/html'
-            }).
-            when('/f/:filterString', {
-                templateUrl: '/page/' + pageName + '/html'
-            }).
-            when('/f/:filterString/p/:pageNumber', {
-                templateUrl: '/page/' + pageName + '/html'
-            }).
-            when('/p/:pageNumber', {
-                templateUrl: '/page/' + pageName + '/html'
-            }).
-            when('/search', {
-                templateUrl: '/page/' + pageName + '/html'
-            }).
-            otherwise({
-                redirectTo: '/'
-            });
-    }
-    ])
+    //.config(function ($routeProvider) {
+    //    $routeProvider.
+    //        when('/', {
+    //            templateUrl: '/page/' + pageName + '/html'
+    //        }).
+    //        when('/f/:filterString', {
+    //            templateUrl: '/page/' + pageName + '/html'
+    //        }).
+    //        when('/f/:filterString/p/:pageNumber', {
+    //            templateUrl: '/page/' + pageName + '/html'
+    //        }).
+    //        when('/p/:pageNumber', {
+    //            templateUrl: '/page/' + pageName + '/html'
+    //        }).
+    //        when('/search', {
+    //            templateUrl: '/page/' + pageName + '/html'
+    //        }).
+    //        otherwise({
+    //            redirectTo: '/'
+    //        });
+    //})
+    .config(function ($locationProvider) {
+        $locationProvider.html5Mode(true).hashPrefix('!');
+    })
 ;
 
 // Source: public/js/page/pageController.js
@@ -259,9 +265,33 @@ angular.module('tantalim.desktop')
 
 angular.module('tantalim.desktop')
     .controller('PageController',
-    function ($scope, $routeParams, $location, Global, PageDefinition, PageService, ModelCursor, ModelSaver, PageCursor, keyboardManager) {
+    function ($scope, $location, Global, PageDefinition, PageService, ModelCursor, ModelSaver, PageCursor, keyboardManager) {
+        window.trevor = $location;
+        $scope.$location = {};
+        angular.forEach("protocol host port path search hash".split(" "), function(method){
+            $scope.$location[method] = function(){
+                var result = $location[method].call($location);
+                return angular.isObject(result) ? angular.toJson(result) : result;
+            };
+        });
+
         $scope.showLoadingScreen = true;
-        $scope.searchMode = false;
+        var searchPath = '/search';
+        var _searchMode = $location.path() === searchPath;
+        console.log('path', $location.path());
+        $scope.searchMode = function(newValue) {
+            if (newValue) {
+                newValue = (newValue);
+                _searchMode = newValue;
+                if (_searchMode) {
+                    $location.path(searchPath);
+                } else {
+                    $location.path('/');
+                }
+            }
+            console.log('searchMode', _searchMode);
+            return _searchMode;
+        };
         if (PageDefinition.error) {
             console.error('Error retrieving PageDefinition: ', PageDefinition.error);
             $scope.serverStatus = '';
@@ -271,6 +301,40 @@ angular.module('tantalim.desktop')
             }
             return;
         }
+        if (!PageDefinition.page.model) {
+            $scope.serverError = PageDefinition.page.name + ' page does not have a model defined.';
+            return;
+        }
+
+        $scope.mode = function(newMode) {
+            if (newMode) {
+                $location.search('mode', newMode);
+            }
+            var oldMode = $location.search().mode;
+            if (!oldMode)
+                return '';
+        };
+
+        var pageParams = {
+                mode: function (newFilter) {
+                    if (newFilter) {
+                        $location.search('mode', newFilter);
+                    }
+                    return $location.search().f;
+                },
+                filter: function (newFilter) {
+                    if (newFilter) {
+                        $location.search('f', newFilter);
+                    }
+                    return $location.search().f;
+                },
+                page: function (newPage) {
+                    if (newPage) {
+                        $location.search('p', newPage);
+                    }
+                    return $location.search().p;
+                }
+        };
 
         function attachModelCursorToScope() {
             $scope.ModelCursor = ModelCursor;
@@ -303,8 +367,8 @@ angular.module('tantalim.desktop')
             $scope.serverError = '';
             $scope.current = {};
 
-            console.log('Searching', $routeParams);
-            PageService.readModelData(PageDefinition.page.model.name, $routeParams.filterString, $routeParams.pageNumber)
+            console.log('Searching', $location.search());
+            PageService.readModelData(PageDefinition.page.model.name, pageParams.filter(), pageParams.page())
                 .then(function (d) {
                     $scope.serverStatus = '';
                     if (d.status !== 200) {
@@ -315,12 +379,12 @@ angular.module('tantalim.desktop')
                         $scope.serverError = 'Error reading data from server: ' + d.data.error;
                         return;
                     }
-                    $scope.filterString = $routeParams.filterString;
-                    $scope.pageNumber = $routeParams.pageNumber;
+                    $scope.filterString = pageParams.filter();
+                    $scope.pageNumber = pageParams.page();
                     ModelCursor.setRoot(PageDefinition.page.model, d.data);
                     attachModelCursorToScope();
                     $scope.showLoadingScreen = false;
-                    $scope.searchMode = false;
+                    //searchMode = false;
                 });
             // TODO Don't reinitialize unless needed
         }
@@ -329,10 +393,10 @@ angular.module('tantalim.desktop')
             if (!$scope.current) {
                 return false;
             }
-            if ($scope.filterString !== $routeParams.filterString) {
+            if ($scope.filterString !== pageParams.filter()) {
                 return false;
             }
-            if ($scope.pageNumber !== $routeParams.pageNumber) {
+            if ($scope.pageNumber !== pageParams.page()) {
                 return false;
             }
             return true;
@@ -380,6 +444,7 @@ angular.module('tantalim.desktop')
         keyboardManager.bind('ctrl+shift+d', function () {
             console.log('DEBUGGING');
             ModelCursor.toConsole();
+            PageCursor.toConsole();
         });
 
 
@@ -390,8 +455,6 @@ angular.module('tantalim.desktop')
             _.forEach(PageDefinition.page.model.fields, function (field) {
                 $scope.comparators[field.name] = 'Contains';
             });
-
-            console.log('comparators = ', $scope.comparators);
 
             $scope.submit = function () {
                 if ($scope.filterString) {
@@ -453,10 +516,10 @@ angular.module('tantalim.desktop')
 
         var SmartSection = function (pageSection) {
             var self = {
-                id: pageSection.id,
+                name: pageSection.name,
                 viewMode: pageSection.viewMode || 'single'
             };
-            cursor.sections[pageSection.id] = self;
+            cursor.sections[pageSection.name] = self;
 
             _.forEach(pageSection.children, function (child) {
                 new SmartSection(child);
@@ -467,51 +530,6 @@ angular.module('tantalim.desktop')
                 new SmartSection(child);
             });
         };
-
-        /*
-         var gridOptions = function (view) {
-
-         var getDataName = function (view) {
-         return 'ModelCursor.current.sets.' + view.modelName + '.rows';
-         };
-
-         var getColumnDefs = function (fields) {
-         return _.map(fields, function (field) {
-         return {
-         field: 'data.' + field.fieldName,
-         displayName: field.fieldLabel
-         };
-         });
-         };
-
-         var selectedItems = [];
-
-         var afterSelectionChange = function(rowItem) {
-         if (selectedItems.length > 0) {
-         var currentSet = selectedItems[0].nodeSet;
-         currentSet.moveTo(rowItem.rowIndex);
-         }
-         };
-
-         return {
-         afterSelectionChange: afterSelectionChange,
-         //                enableSorting: false,
-         //                enableColumnReordering: true,
-         enableColumnResize: true,
-         enableCellEdit: true,
-         enablePinning: true,
-         enableHighlighting: true,
-         showColumnMenu: true,
-         groupsCollapsedByDefault: false,
-         multiSelect: false,
-         //                keepLastSelected: false,
-         selectedItems: selectedItems,
-         pagingOptions: { pageSizes: [10, 100, 1000], pageSize: 10, totalServerItems: 55, currentPage: 1 },
-         columnDefs: getColumnDefs(view.listFields),
-         data: getDataName(view)
-         };
-         };
-         */
 
         cursor.initialize = function (p) {
             $log.debug('initializing PageCursor');
