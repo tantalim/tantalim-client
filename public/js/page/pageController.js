@@ -22,16 +22,17 @@ angular.module('tantalim.desktop')
         function SearchController() {
             var searchPath = '/search';
             var self = {
-                showSearch: $location.path() === searchPath,
+                showSearch: undefined,
+                initialize: function() {
+                    self.showSearch = $location.path() === searchPath;
+                },
                 turnSearchOn: function () {
                     $location.path(searchPath);
                     self.showSearch = true;
                 },
                 turnSearchOff: function () {
-                    console.info('turnSearchOff');
                     $location.path('/');
                     self.showSearch = false;
-                    console.info('done');
                 },
                 filter: function (newFilter) {
                     if (newFilter) {
@@ -48,6 +49,7 @@ angular.module('tantalim.desktop')
             };
             return self;
         }
+
         var searchController = new SearchController();
         $scope.searchController = searchController;
 
@@ -56,7 +58,6 @@ angular.module('tantalim.desktop')
             $scope.serverError = '';
             $scope.current = {};
 
-            console.log('Searching', $location.search());
             PageService.readModelData(PageDefinition.page.model.name, searchController.filter(), searchController.page())
                 .then(function (d) {
                     $scope.serverStatus = '';
@@ -75,75 +76,75 @@ angular.module('tantalim.desktop')
                     $scope.ModelCursor = ModelCursor;
                     $scope.current = ModelCursor.current;
                     $scope.action = ModelCursor.action;
-                    keyboardManager.bind('up', function () {
-                        if ($scope.currentModel) {
-                            $scope.action.previous($scope.currentModel);
-                        }
-                    });
-                    keyboardManager.bind('down', function () {
-                        if ($scope.currentModel) {
-                            $scope.action.next($scope.currentModel);
-                        }
-                    });
-                    keyboardManager.bind('ctrl+d', function () {
-                        if ($scope.currentModel) {
-                            $scope.action.delete($scope.currentModel);
-                        }
-                    });
-                    keyboardManager.bind('ctrl+n', function () {
-                        if ($scope.currentModel) {
-                            $scope.action.insert($scope.currentModel);
-                        }
-                    });
                     searchController.turnSearchOff();
                     $scope.showLoadingScreen = false;
                 });
-            // TODO Don't reinitialize unless needed
         }
 
-        if (!PageCursor.initialized) {
-            PageCursor.initialize(PageDefinition.page);
-        }
-
+        PageCursor.initialize(PageDefinition.page);
         $scope.PageCursor = PageCursor;
-        $scope.currentModel = PageDefinition.currentModel;
 
-        if (searchController.showSearch) {
-            $scope.showLoadingScreen = false;
-        } else {
-            loadData();
-        }
-
-        $scope.rowChanged = function (thisInstance) {
-            ModelCursor.change(thisInstance);
+        $scope.chooseModel = function(model) {
+            $scope.currentModel = model;
         };
+        $scope.chooseModel(PageDefinition.page.model.name);
 
-        $scope.refresh = function () {
-            if (ModelCursor.dirty && !$scope.serverStatus) {
-                $scope.serverStatus = 'There are unsaved changes. Click [Refresh] again to discard those changes.';
-                return;
-            }
-            loadData();
-        };
-
-        $scope.save = function () {
-            $scope.serverStatus = 'Saving...';
-            ModelSaver.save(PageDefinition.page.model, ModelCursor.root, function (status) {
-                $scope.serverStatus = status;
-                if (!status) {
-                    ModelCursor.dirty = false;
+        (function setupHotKeys() {
+            keyboardManager.bind('up', function () {
+                if ($scope.currentModel) {
+                    $scope.action.previous($scope.currentModel);
                 }
             });
-        };
-        keyboardManager.bind('ctrl+s', function () {
-            $scope.save();
-        });
-        keyboardManager.bind('ctrl+shift+d', function () {
-            console.log('DEBUGGING');
-            ModelCursor.toConsole();
-            PageCursor.toConsole();
-        });
+            keyboardManager.bind('down', function () {
+                if ($scope.currentModel) {
+                    $scope.action.next($scope.currentModel);
+                }
+            });
+            keyboardManager.bind('ctrl+d', function () {
+                if ($scope.currentModel) {
+                    $scope.action.delete($scope.currentModel);
+                }
+            });
+            keyboardManager.bind('ctrl+n', function () {
+                if ($scope.currentModel) {
+                    $scope.action.insert($scope.currentModel);
+                }
+            });
 
+            keyboardManager.bind('ctrl+s', function () {
+                $scope.save();
+            });
+            keyboardManager.bind('ctrl+shift+d', function () {
+                console.log('DEBUGGING');
+                ModelCursor.toConsole();
+                PageCursor.toConsole();
+            });
+
+        })();
+
+        (function addFormMethodsToScope(){
+            $scope.rowChanged = function (thisInstance) {
+                ModelCursor.change(thisInstance);
+            };
+
+            $scope.refresh = function () {
+                if (ModelCursor.dirty && !$scope.serverStatus) {
+                    $scope.serverStatus = 'There are unsaved changes. Click [Refresh] again to discard those changes.';
+                    return;
+                }
+                loadData();
+            };
+
+            $scope.save = function () {
+                $scope.serverStatus = 'Saving...';
+                ModelSaver.save(PageDefinition.page.model, ModelCursor.root, function (status) {
+                    $scope.serverStatus = status;
+                    if (!status) {
+                        ModelCursor.dirty = false;
+                    }
+                });
+            };
+        })();
 
         (function initializeSearchPage() {
             $scope.filterValues = {};
@@ -187,4 +188,18 @@ angular.module('tantalim.desktop')
 
             $scope.filterString = '';
         })();
+
+        $scope.$on('$locationChangeSuccess', function (event) {
+            initializePage();
+        });
+
+        function initializePage() {
+            searchController.initialize();
+            if (!searchController.showSearch) {
+                loadData();
+            }
+        }
+
+        initializePage();
+        $scope.showLoadingScreen = false;
     });

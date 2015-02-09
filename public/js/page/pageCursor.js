@@ -6,7 +6,6 @@ angular.module('tantalim.desktop')
         //$log.debug('Starting PageCursor');
 
         var cursor = {
-            initialized: false,
             /**
              * A pointer to the currently selected section. Useful for key binding and such.
              */
@@ -37,7 +36,6 @@ angular.module('tantalim.desktop')
         cursor.initialize = function (p) {
             $log.debug('initializing PageCursor');
             new SmartSection(p);
-            cursor.initialized = true;
         };
 
         return cursor;
