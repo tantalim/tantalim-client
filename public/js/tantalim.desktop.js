@@ -228,33 +228,7 @@ angular.module('tantalim.desktop')
     }]);
 
 // Source: public/js/page/main.js
-/* global pageName */
-/**
- * Including `pageName` here from the global namespace. Tried to inject PageDefinition here but for some reason it didn't work.
- */
-
 angular.module('tantalim.desktop')
-    //.config(function ($routeProvider) {
-    //    $routeProvider.
-    //        when('/', {
-    //            templateUrl: '/page/' + pageName + '/html'
-    //        }).
-    //        when('/f/:filterString', {
-    //            templateUrl: '/page/' + pageName + '/html'
-    //        }).
-    //        when('/f/:filterString/p/:pageNumber', {
-    //            templateUrl: '/page/' + pageName + '/html'
-    //        }).
-    //        when('/p/:pageNumber', {
-    //            templateUrl: '/page/' + pageName + '/html'
-    //        }).
-    //        when('/search', {
-    //            templateUrl: '/page/' + pageName + '/html'
-    //        }).
-    //        otherwise({
-    //            redirectTo: '/'
-    //        });
-    //})
     .config(function ($locationProvider) {
         $locationProvider.html5Mode(true).hashPrefix('!');
     })
@@ -367,6 +341,11 @@ angular.module('tantalim.desktop')
                     $scope.action.delete($scope.currentModel);
                 }
             });
+            keyboardManager.bind('ctrl+n', function () {
+                if ($scope.currentModel) {
+                    $scope.action.insert($scope.currentModel);
+                }
+            });
             keyboardManager.bind('shift+up', function () {
                 var currentPage = searchController.page() || 1;
                 if (currentPage > 1) {
@@ -459,19 +438,20 @@ angular.module('tantalim.desktop')
             $scope.filterString = '';
         })();
 
-        $scope.$on('$locationChangeSuccess', function (event) {
+        $scope.$on('$locationChangeSuccess', function () {
             initializePage();
         });
 
         function initializePage() {
             searchController.initialize();
-            if (!searchController.showSearch) {
+            if (searchController.showSearch) {
+                $scope.showLoadingScreen = false;
+            } else {
                 loadData();
             }
         }
 
         initializePage();
-        $scope.showLoadingScreen = false;
     });
 
 // Source: public/js/page/pageCursor.js

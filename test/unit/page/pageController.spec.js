@@ -2,6 +2,7 @@
 
 describe('PageController', function () {
     var scope,
+        PageDefinitionMock,
         ModelDataMock,
         dataResponseMock = {},
         pageServiceMock = {
@@ -16,6 +17,10 @@ describe('PageController', function () {
 
     beforeEach(module('tantalim.desktop'));
     beforeEach(inject(function () {
+        PageDefinitionMock = {
+            model: {},
+            page: {}
+        };
         ModelDataMock = {
             model: {},
             page: {}
@@ -30,7 +35,7 @@ describe('PageController', function () {
     describe('errors', function () {
         it('should return error', inject(function ($controller) {
             ModelDataMock.error = 'test error';
-            $controller('PageController', {$scope: scope, ModelData: ModelDataMock, PageService: pageServiceMock});
+            $controller('PageController', {$scope: scope, ModelData: ModelDataMock, PageService: pageServiceMock, PageDefinition: PageDefinitionMock});
             expect(scope.serverError).toBe('test error');
         }));
 
@@ -38,7 +43,7 @@ describe('PageController', function () {
             dataResponseMock = {
                 status: 404
             };
-            $controller('PageController', {$scope: scope, ModelData: ModelDataMock, PageService: pageServiceMock});
+            $controller('PageController', {$scope: scope, ModelData: ModelDataMock, PageService: pageServiceMock, PageDefinition: PageDefinitionMock});
             expect(scope.serverError).toBe('Failed to reach server. Try refreshing.');
         }));
 
@@ -49,18 +54,18 @@ describe('PageController', function () {
                     error: 'test'
                 }
             };
-            $controller('PageController', {$scope: scope, ModelData: ModelDataMock, PageService: pageServiceMock});
+            $controller('PageController', {$scope: scope, ModelData: ModelDataMock, PageService: pageServiceMock, PageDefinition: PageDefinitionMock});
             expect(scope.serverError).toBe('Error reading data from server: test');
         }));
     });
 
     it('should load data', inject(function ($controller) {
-        $controller('PageController', {$scope: scope, ModelData: ModelDataMock, PageService: pageServiceMock});
+        $controller('PageController', {$scope: scope, ModelData: ModelDataMock, PageService: pageServiceMock, PageDefinition: PageDefinitionMock});
         expect(scope.serverStatus).toBe('');
     }));
 
     it('should refresh data', inject(function ($controller) {
-        $controller('PageController', {$scope: scope, ModelData: ModelDataMock, PageService: pageServiceMock});
+        $controller('PageController', {$scope: scope, ModelData: ModelDataMock, PageService: pageServiceMock, PageDefinition: PageDefinitionMock});
         scope.refresh();
         expect(scope.serverStatus).toBe('');
     }));

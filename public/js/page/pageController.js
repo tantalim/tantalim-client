@@ -56,7 +56,6 @@ angular.module('tantalim.desktop')
         function loadData() {
             $scope.serverStatus = 'Loading data...';
             $scope.serverError = '';
-            $scope.current = {};
 
             PageService.readModelData(PageDefinition.page.model.name, searchController.filter(), searchController.page())
                 .then(function (d) {
@@ -202,17 +201,18 @@ angular.module('tantalim.desktop')
             $scope.filterString = '';
         })();
 
-        $scope.$on('$locationChangeSuccess', function (event) {
+        $scope.$on('$locationChangeSuccess', function () {
             initializePage();
         });
 
         function initializePage() {
             searchController.initialize();
-            if (!searchController.showSearch) {
+            if (searchController.showSearch) {
+                $scope.showLoadingScreen = false;
+            } else {
                 loadData();
             }
         }
 
         initializePage();
-        $scope.showLoadingScreen = false;
     });
