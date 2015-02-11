@@ -142,7 +142,7 @@
                     expect(newRow.data.TableType2).toBe("2");
                 });
 
-                it('should default the field value to 2', function () {
+                it('should default the field value with function to 1', function () {
                     sampleModel = {
                         name: 'Tables',
                         fields: [
@@ -150,14 +150,14 @@
                                 "name": "TableName",
                                 "fieldDefault": {
                                     "type": "fxn",
-                                    "value": "1"
+                                    "value": "2 - 1"
                                 }
                             }
                         ]
                     };
                     service.setRoot(sampleModel, []);
                     var newRow = service.action.insert("Tables");
-                    expect(newRow.data.TableName).toBe("1");
+                    expect(newRow.data.TableName).toBe(1);
                 });
             });
 
