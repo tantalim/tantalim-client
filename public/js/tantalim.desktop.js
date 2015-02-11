@@ -236,6 +236,7 @@ angular.module('tantalim.desktop')
 
 // Source: public/js/page/pageController.js
 /* global _ */
+/* global angular */
 
 angular.module('tantalim.desktop')
     .controller('PageController',
@@ -503,9 +504,13 @@ angular.module('tantalim.desktop')
 );
 
 // Source: public/js/common/_app.js
+/* global angular */
+
 angular.module('tantalim.common', []);
 
 // Source: public/js/common/global.js
+/* global angular */
+
 angular.module('tantalim.common')
     .factory('Global', [
         function () {
@@ -519,6 +524,8 @@ angular.module('tantalim.common')
     ]);
 
 // Source: public/js/common/guid.js
+/* global angular */
+
 angular.module('tantalim.common')
     .factory('GUID', function () {
         function s4() {
@@ -560,6 +567,7 @@ angular.module('tantalim.common')
     ]);
 // Source: public/js/common/modelCursor.js
 /* global _ */
+/* global angular */
 
 angular.module('tantalim.common')
     .factory('ModelCursor', ['$filter', '$log', 'GUID',
@@ -577,7 +585,7 @@ angular.module('tantalim.common')
                 rootSet = null;
                 current = {sets: {}, instances: {}};
                 modelMap = {};
-            }
+            };
             clear();
 
             var fillModelMap = function (model, parentName) {
@@ -803,7 +811,7 @@ angular.module('tantalim.common')
                     },
                     findIndex: function (id) {
                         return _.findIndex(this.rows, function(row) {
-                            return row.id == id;
+                            return row.id === id;
                         });
                     },
                     delete: function (index) {
@@ -983,7 +991,7 @@ angular.module('tantalim.common')
                         self.dirty = true;
                     },
                     deleteEnabled: function (modelName) {
-                        return current.instances[modelName] != null;
+                        return current.instances[modelName] !== null;
                     },
                     choose: function (modelName, id) {
                         var index = current.sets[modelName].findIndex(id);
@@ -1005,6 +1013,7 @@ angular.module('tantalim.common')
     ]);
 // Source: public/js/common/modelSaver.js
 /* global _ */
+/* global angular */
 
 angular.module('tantalim.common')
     .factory('ModelSaver', ['$http', '$log',
@@ -1132,6 +1141,8 @@ angular.module('tantalim.common')
         }
     ]);
 // Source: public/js/common/pageService.js
+/* global angular */
+
 angular.module('tantalim.common')
     .factory('PageService', function ($http) {
         return {

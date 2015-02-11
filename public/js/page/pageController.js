@@ -1,5 +1,6 @@
 'use strict';
 /* global _ */
+/* global angular */
 
 angular.module('tantalim.desktop')
     .controller('PageController',

@@ -1,5 +1,6 @@
 'use strict';
 /* global _ */
+/* global angular */
 
 angular.module('tantalim.common')
     .factory('ModelCursor', ['$filter', '$log', 'GUID',
@@ -17,7 +18,7 @@ angular.module('tantalim.common')
                 rootSet = null;
                 current = {sets: {}, instances: {}};
                 modelMap = {};
-            }
+            };
             clear();
 
             var fillModelMap = function (model, parentName) {
@@ -243,7 +244,7 @@ angular.module('tantalim.common')
                     },
                     findIndex: function (id) {
                         return _.findIndex(this.rows, function(row) {
-                            return row.id == id;
+                            return row.id === id;
                         });
                     },
                     delete: function (index) {
@@ -423,7 +424,7 @@ angular.module('tantalim.common')
                         self.dirty = true;
                     },
                     deleteEnabled: function (modelName) {
-                        return current.instances[modelName] != null;
+                        return current.instances[modelName] !== null;
                     },
                     choose: function (modelName, id) {
                         var index = current.sets[modelName].findIndex(id);
