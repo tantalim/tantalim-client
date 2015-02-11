@@ -133,6 +133,31 @@ angular.module('tantalim.common')
         };
     });
 
+// Source: public/js/common/logger.js
+/**
+ * Logger.log(Message({});
+ */
+angular.module('tantalim.common')
+    .factory('Logger', [
+        function () {
+            var messages = [];
+
+            var _self = {
+                Message: function (content) {
+                    var defaults = {
+
+                    };
+
+                    // merge content and defaults
+                    return this;
+                },
+                log: function (message) {
+                    messages.push(message);
+                }
+            };
+            return _self;
+        }
+    ]);
 // Source: public/js/common/modelCursor.js
 /* global _ */
 
@@ -255,8 +280,6 @@ angular.module('tantalim.common')
                         return;
                     }
 
-                    console.log('Calculating default value for ', field);
-
                     var DEFAULT_TYPE = {
                         CONSTANT: "constant",
                         FIELD: "field",
@@ -266,18 +289,16 @@ angular.module('tantalim.common')
                     switch(field.fieldDefault.type) {
                         case DEFAULT_TYPE.FIELD:
                             row.data[field.name] = getFieldValue(field.fieldDefault.value, row);
-                            $log.debug('defaulted ' + field.name + ' to ' + row.data[field.name]);
-                            return;
+                            break;
                         case DEFAULT_TYPE.FXN:
-                            console.info('running fxn - NOT SUPPORTED YET');
-                            row.data[field.name] = field.fieldDefault.value;
-                            return;
+                            row.data[field.name] = eval(field.fieldDefault.value);
+                            break;
                         case DEFAULT_TYPE.CONSTANT:
                         default:
                             row.data[field.name] = field.fieldDefault.value;
-                            $log.debug('defaulted ' + field.name + ' to ' + row.data[field.name]);
-                            return;
+                            break;
                     }
+                    $log.debug('defaulted ' + field.name + ' to ' + row.data[field.name]);
                 }
 
                 if (row.id === null) {
@@ -537,10 +558,11 @@ angular.module('tantalim.common')
                     console.log('ModelCursor.current', self.current);
                 },
                 change: function (instance) {
+                    console.info('changing', instance);
                     if (instance.state === 'NO_CHANGE' || instance.state === 'CHILD_UPDATED') {
+                        self.dirty = true;
                         instance.state = 'UPDATED';
                         markParentOfThisInstanceChanged(instance);
-                        self.dirty = true;
                     }
                 },
                 action: {

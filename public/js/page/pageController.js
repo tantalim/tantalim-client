@@ -150,7 +150,8 @@ angular.module('tantalim.desktop')
             $scope.save = function () {
                 $scope.serverStatus = 'Saving...';
                 ModelSaver.save(PageDefinition.page.model, ModelCursor.root, function (status) {
-                    $scope.serverStatus = status;
+                    $scope.serverStatus = '';
+                    $scope.serverError = status;
                     if (!status) {
                         ModelCursor.dirty = false;
                     }

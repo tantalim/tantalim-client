@@ -13,7 +13,11 @@ angular.module('tantalim.desktop')
             /**
              * A list of each section on the page
              */
-            sections: {}
+            sections: {},
+            toConsole: function() {
+                console.log('PageCursor.current', cursor.current);
+                console.log('PageCursor.sections', cursor.sections);
+            }
         };
 
         var SmartSection = function (pageSection) {
