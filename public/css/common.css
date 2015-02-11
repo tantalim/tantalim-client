@@ -30,7 +30,7 @@ body {
 }
 
 #server-status, #server-error {
-    position: absolute;
+    position: fixed;
     padding: 2px 10px;
     left: 0;
     top: 51px;
