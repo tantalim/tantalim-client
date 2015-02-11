@@ -23,7 +23,7 @@ angular.module('tantalim.desktop')
         var SmartSection = function (pageSection) {
             var self = {
                 name: pageSection.name,
-                viewMode: pageSection.viewMode || 'single'
+                viewMode: pageSection.viewMode
             };
             cursor.sections[pageSection.name] = self;
 
