@@ -292,7 +292,6 @@ angular.module('tantalim.desktop')
         function loadData() {
             $scope.serverStatus = 'Loading data...';
             $scope.serverError = '';
-            $scope.current = {};
 
             PageService.readModelData(PageDefinition.page.model.name, searchController.filter(), searchController.page())
                 .then(function (d) {
@@ -651,6 +650,8 @@ angular.module('tantalim.common')
                         return;
                     }
 
+                    console.log('Calculating default value for ', field);
+
                     var DEFAULT_TYPE = {
                         CONSTANT: "constant",
                         FIELD: "field",
@@ -659,17 +660,17 @@ angular.module('tantalim.common')
 
                     switch(field.fieldDefault.type) {
                         case DEFAULT_TYPE.FIELD:
-                            row.data[field.fieldName] = getFieldValue(field.fieldDefault.value, row);
-                            $log.debug('defaulted ' + field.fieldName + ' to ' + row.data[field.fieldName]);
+                            row.data[field.name] = getFieldValue(field.fieldDefault.value, row);
+                            $log.debug('defaulted ' + field.name + ' to ' + row.data[field.name]);
                             return;
                         case DEFAULT_TYPE.FXN:
                             console.info('running fxn - NOT SUPPORTED YET');
-                            row.data[field.fieldName] = field.fieldDefault.value;
+                            row.data[field.name] = field.fieldDefault.value;
                             return;
                         case DEFAULT_TYPE.CONSTANT:
                         default:
-                            row.data[field.fieldName] = field.fieldDefault.value;
-                            $log.debug('defaulted ' + field.fieldName + ' to ' + row.data[field.fieldName]);
+                            row.data[field.name] = field.fieldDefault.value;
+                            $log.debug('defaulted ' + field.name + ' to ' + row.data[field.name]);
                             return;
                     }
                 }

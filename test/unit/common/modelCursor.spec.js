@@ -122,13 +122,13 @@
                         name: 'Tables',
                         fields: [
                             {
-                                "fieldName": "TableType1",
+                                "name": "TableType1",
                                 "fieldDefault": {
                                     "value": "1"
                                 }
                             },
                             {
-                                "fieldName": "TableType2",
+                                "name": "TableType2",
                                 "fieldDefault": {
                                     "type": "constant",
                                     "value": "2"
@@ -147,7 +147,7 @@
                         name: 'Tables',
                         fields: [
                             {
-                                "fieldName": "TableName",
+                                "name": "TableName",
                                 "fieldDefault": {
                                     "type": "fxn",
                                     "value": "1"
@@ -202,10 +202,13 @@
             beforeEach(function () {
                 sampleModel = {
                     name: 'Tables',
-                    orderBy: 'TableName',
+                    orderBy: {
+                        "fieldName": "TableName",
+                        "direction": "ASC"
+                    },
                     fields: [
                         {
-                            "fieldName": "TableName"
+                            "name": "TableName"
                         }
                     ],
                     children: [
@@ -213,10 +216,10 @@
                             name: 'Columns',
                             fields: [
                                 {
-                                    "fieldName": "ColumnName"
+                                    "name": "ColumnName"
                                 },
                                 {
-                                    "fieldName": "ColumnTableName",
+                                    "name": "ColumnTableName",
                                     "fieldDefault": {
                                         "type": "field",
                                         "value": "TableName"

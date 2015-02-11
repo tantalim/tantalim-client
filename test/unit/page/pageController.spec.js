@@ -19,7 +19,9 @@ describe('PageController', function () {
     beforeEach(inject(function () {
         PageDefinitionMock = {
             model: {},
-            page: {}
+            page: {
+                model: "TestModel"
+            }
         };
         ModelDataMock = {
             model: {},
@@ -29,7 +31,10 @@ describe('PageController', function () {
             status: 200,
             data: {}
         };
-        scope = {};
+        scope = {
+            $watch: function() {},
+            $on: function() {}
+        };
     }));
 
     describe('errors', function () {
