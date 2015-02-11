@@ -29,7 +29,7 @@ angular.module('tantalim.common')
                         fillModelMap(childModel, modelName);
                     });
                 } else {
-                    console.warn('failed to fill modelMap for ', model);
+                    console.warn('failed to fill modelMap for %s', model);
                 }
             };
 
