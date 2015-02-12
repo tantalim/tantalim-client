@@ -1,7 +1,8 @@
 'use strict';
 
 angular.module('tantalim.desktop')
-    .config(function ($locationProvider) {
+    .config(function ($locationProvider, $logProvider) {
         $locationProvider.html5Mode(true).hashPrefix('!');
+        $logProvider.debugEnabled(false);
     })
 ;
