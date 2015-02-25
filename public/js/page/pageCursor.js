@@ -3,7 +3,7 @@
 
 angular.module('tantalim.desktop')
     .factory('PageCursor', function ($log) {
-        //$log.debug('Starting PageCursor');
+        $log.debug('Starting PageCursor');
 
         var cursor = {
             /**
@@ -28,11 +28,6 @@ angular.module('tantalim.desktop')
             cursor.sections[pageSection.name] = self;
 
             _.forEach(pageSection.children, function (child) {
-                new SmartSection(child);
-            });
-
-            _.forEach(pageSection.page, function (child) {
-                $log.warn('Using child pages is deprecated', self, child);
                 new SmartSection(child);
             });
         };

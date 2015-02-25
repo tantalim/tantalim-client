@@ -188,16 +188,11 @@ angular.module('tantalim.common')
             clear();
 
             var fillModelMap = function (model, parentName) {
-                var modelName = model.name;
-                if (modelName) {
-                    modelMap[modelName] = model;
-                    model.parent = parentName;
-                    _.forEach(model.children, function (childModel) {
-                        fillModelMap(childModel, modelName);
-                    });
-                } else {
-                    console.warn('failed to fill modelMap for %s', model);
-                }
+                modelMap[model.name] = model;
+                model.parent = parentName; //
+                _.forEach(model.children, function (childModel) {
+                    fillModelMap(childModel, model.name);
+                });
             };
 
             var resetCurrents = function (value, modelName) {
@@ -231,8 +226,14 @@ angular.module('tantalim.common')
                 }
             };
 
+            /**
+             *
+             * @param model
+             * @param row
+             * @param nodeSet
+             */
             var SmartNodeInstance = function (model, row, nodeSet) {
-                //$log.debug('Adding SmartNodeInstance for ', model, row);
+                $log.debug('Adding SmartNodeInstance id:%s for model `%s` onto set ', row.id, model.name, nodeSet);
                 var defaults = {
                     _type: 'SmartNodeInstance',
                     /**
@@ -309,33 +310,38 @@ angular.module('tantalim.common')
                 }
 
                 if (row.id === null) {
-                    //$log.debug('id is null, so assume record is newly inserted', row);
+                    $log.debug('id is null, so assume record is newly inserted', row);
                     newInstance.state = 'INSERTED';
                     newInstance.id = GUID();
+                    $log.debug('defaulting field values', model.fields);
                     _.forEach(model.fields, function (field) {
                         setFieldDefault(field, row);
                     });
-                    return newInstance;
                 }
 
-                newInstance.addChildModel = function(childModel, childDataSet) {
-                    var modelName = childModel.name;
-                    var smartSet = new SmartNodeSet(childModel, childDataSet, newInstance);
-                    newInstance.childModels[modelName] = smartSet;
+                newInstance.addChildModel = function(childModelName, childDataSet) {
+                    var smartSet = new SmartNodeSet(modelMap[childModelName], childDataSet, newInstance);
+                    newInstance.childModels[childModelName] = smartSet;
                 };
 
                 if (row.children) {
                     _.forEach(model.children, function(childModel) {
-                        var modelName = childModel.name;
-                        newInstance.addChildModel(childModel, row.children[modelName]);
+                        newInstance.addChildModel(childModel.name, row.children[childModel.name]);
                     });
                 }
 
+                $log.debug('Done creating newInstance');
                 return newInstance;
             };
 
+            /**
+             *
+             * @param model
+             * @param data
+             * @param parentInstance
+             */
             var SmartNodeSet = function (model, data, parentInstance) {
-                //console.debug('Adding SmartNodeSet for ' + model.name);
+                $log.debug('Adding SmartNodeSet for ' + model.name);
                 //console.debug(model);
                 var defaults = {
                     _type: 'SmartNodeSet',
@@ -493,6 +499,7 @@ angular.module('tantalim.common')
                 newSet.model.orderBy = model.orderBy;
                 newSet.parentInstance = parentInstance;
                 newSet.insert = function () {
+                    $log.debug('Inserting new instance with model')
                     var smartInstance = new SmartNodeInstance(model, {}, newSet);
                     newSet.rows.push(smartInstance);
                     newSet.moveToBottom();
@@ -508,9 +515,6 @@ angular.module('tantalim.common')
                     if (newSet.rows.length) {
                         newSet.currentIndex = 0;
                     }
-                } else {
-                    console.warn('SmartNodeSet expected data to be array but got the following:');
-                    console.warn(data);
                 }
 
                 return newSet;
@@ -528,7 +532,7 @@ angular.module('tantalim.common')
                 root: rootSet,
                 current: current,
                 setRoot: function (model, data) {
-                    //$log.debug('Setting Root data');
+                    $log.debug('Setting Root data');
                     //$log.debug(model);
                     //$log.debug(data);
                     clear();
@@ -549,11 +553,10 @@ angular.module('tantalim.common')
                 },
                 getCurrentSet: function (modelName) {
                     if (current.sets[modelName] === undefined) {
+                        $log.debug('current set for %s hasn\'t been created yet, creating now.', modelName);
                         var parentName = modelMap[modelName].parent;
                         var parentInstance = current.instances[parentName];
-                        parentInstance.addChildModel({
-                            data: {modelName: modelName}
-                        }, []);
+                        parentInstance.addChildModel(modelName);
                         resetCurrents(self.root);
                     }
                     return current.sets[modelName];
@@ -564,8 +567,11 @@ angular.module('tantalim.common')
                     console.log('ModelCursor.modelMap', modelMap);
                     console.log('ModelCursor.current', self.current);
                 },
-                change: function (instance) {
-                    console.info('changing', instance);
+                change: function (instance, fieldName) {
+                    if (fieldName === 'TableName') {
+                        var rowData = instance.data;
+                        rowData.TableSQL = 'app_' + rowData[fieldName];
+                    }
                     if (instance.state === 'NO_CHANGE' || instance.state === 'CHILD_UPDATED') {
                         self.dirty = true;
                         instance.state = 'UPDATED';
@@ -712,7 +718,7 @@ angular.module('tantalim.common')
                                     success('Failed to save data ' + data.error);
                                 } else {
                                     rootSet.reloadFromServer(data);
-                                    success();
+                                    success('');
                                 }
                             } else {
                                 success('Failed ' + status);
@@ -748,13 +754,13 @@ angular.module('tantalim.common')
             readModelData: function (modelName, filterString, pageNumber) {
                 var url = '/data/' + modelName + '?';
                 if (filterString) {
-                    url += 'filterString=' + filterString;
+                    url += 'filter=' + filterString;
                 }
                 if (pageNumber) {
                     if (filterString) {
                         url += '&';
                     }
-                    url += 'pageNumber=' + pageNumber;
+                    url += 'page=' + pageNumber;
                 }
                 return $http.get(url);
             }

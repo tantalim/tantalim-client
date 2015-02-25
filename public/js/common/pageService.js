@@ -7,13 +7,13 @@ angular.module('tantalim.common')
             readModelData: function (modelName, filterString, pageNumber) {
                 var url = '/data/' + modelName + '?';
                 if (filterString) {
-                    url += 'filterString=' + filterString;
+                    url += 'filter=' + filterString;
                 }
                 if (pageNumber) {
                     if (filterString) {
                         url += '&';
                     }
-                    url += 'pageNumber=' + pageNumber;
+                    url += 'page=' + pageNumber;
                 }
                 return $http.get(url);
             }

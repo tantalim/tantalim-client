@@ -100,7 +100,7 @@ angular.module('tantalim.common')
                                     success('Failed to save data ' + data.error);
                                 } else {
                                     rootSet.reloadFromServer(data);
-                                    success();
+                                    success('');
                                 }
                             } else {
                                 success('Failed ' + status);

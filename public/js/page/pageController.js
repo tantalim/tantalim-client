@@ -4,21 +4,21 @@
 
 angular.module('tantalim.desktop')
     .controller('PageController',
-    function ($scope, $location, PageDefinition, PageService, ModelCursor, ModelSaver, PageCursor, keyboardManager) {
+    function ($scope, $log, $location, PageDefinition, PageService, ModelCursor, ModelSaver, PageCursor, keyboardManager, $window) {
         $scope.showLoadingScreen = true;
-        if (PageDefinition.error) {
-            console.error('Error retrieving PageDefinition: ', PageDefinition.error);
-            $scope.serverStatus = '';
-            $scope.serverError = PageDefinition.error;
-            if (PageDefinition.message) {
-                $scope.serverError += ': ' + PageDefinition.message;
-            }
-            return;
-        }
-        if (!PageDefinition.page.model) {
-            $scope.serverError = PageDefinition.page.name + ' page does not have a model defined.';
-            return;
-        }
+        //if (PageDefinition.error) {
+        //    console.error('Error retrieving PageDefinition: ', PageDefinition.error);
+        //    $scope.serverStatus = '';
+        //    $scope.serverError = PageDefinition.error;
+        //    if (PageDefinition.message) {
+        //        $scope.serverError += ': ' + PageDefinition.message;
+        //    }
+        //    return;
+        //}
+        //if (!PageDefinition.page.model) {
+        //    $scope.serverError = PageDefinition.page.name + ' page does not have a model defined.';
+        //    return;
+        //}
 
         function SearchController() {
             var searchPath = '/search';
@@ -37,13 +37,13 @@ angular.module('tantalim.desktop')
                 },
                 filter: function (newFilter) {
                     if (newFilter) {
-                        $location.search('f', newFilter);
+                        $location.search('filter', newFilter);
                     }
                     return $location.search().f;
                 },
                 page: function (newPage) {
                     if (newPage) {
-                        $location.search('p', newPage);
+                        $location.search('page', newPage);
                     }
                     return $location.search().p;
                 }
@@ -55,6 +55,7 @@ angular.module('tantalim.desktop')
         $scope.searchController = searchController;
 
         function loadData() {
+            //$log.debug('loadData()');
             $scope.serverStatus = 'Loading data...';
             $scope.serverError = '';
 
@@ -66,7 +67,7 @@ angular.module('tantalim.desktop')
                         return;
                     }
                     if (d.data.error) {
-                        $scope.serverError = 'Error reading data from server: ' + d.data.error;
+                        $scope.serverError = 'Error reading data from server: ' + d.data.error.message;
                         return;
                     }
                     $scope.filterString = searchController.filter();
@@ -136,11 +137,10 @@ angular.module('tantalim.desktop')
         })();
 
         (function addFormMethodsToScope(){
-            $scope.rowChanged = function (thisInstance) {
-                ModelCursor.change(thisInstance);
-            };
+            $scope.rowChanged = ModelCursor.change;
 
             $scope.refresh = function () {
+                $log.debug('refresh()');
                 if (ModelCursor.dirty && !$scope.serverStatus) {
                     $scope.serverStatus = 'There are unsaved changes. Click [Refresh] again to discard those changes.';
                     return;
@@ -152,7 +152,7 @@ angular.module('tantalim.desktop')
                 $scope.serverStatus = 'Saving...';
                 ModelSaver.save(PageDefinition.page.model, ModelCursor.root, function (status) {
                     $scope.serverStatus = '';
-                    $scope.serverError = status;
+                    $scope.serverError = status.toString();
                     if (!status) {
                         ModelCursor.dirty = false;
                     }
@@ -164,11 +164,12 @@ angular.module('tantalim.desktop')
             $scope.filterValues = {};
             $scope.filterComparators = {};
 
-            _.forEach(PageDefinition.page.model.fields, function (field) {
+            angular.forEach(PageDefinition.page.model.fields, function (field) {
                 $scope.filterComparators[field.name] = 'Contains';
             });
 
             $scope.runSearch = function () {
+                $log.debug('runSearch()');
                 if ($scope.filterString) {
                     searchController.filter($scope.filterString);
                 } else {
@@ -188,7 +189,7 @@ angular.module('tantalim.desktop')
             var setFilterString = function (filterValues, filterComparators) {
                 var filterString = '';
 
-                _.forEach($scope.filterValues, function (value, fieldName) {
+                angular.forEach($scope.filterValues, function (value, fieldName) {
                     if (value) {
                         if (filterString.length > 0) {
                             filterString += ' AND ';
@@ -203,11 +204,16 @@ angular.module('tantalim.desktop')
             $scope.filterString = '';
         })();
 
-        $scope.$on('$locationChangeSuccess', function () {
-            initializePage();
-        });
+        $scope.link = function(targetPage, filter, modelName) {
+            var data = ModelCursor.current.instances[modelName];
+            _.forEach(data.data, function(value, key) {
+                filter = filter.replace('[' + key + ']', data.data[key]);
+            });
+            $window.location.href = '/page/' + targetPage + '/?filter=' + filter;
+        };
 
         function initializePage() {
+            $log.debug('initializePage()');
             searchController.initialize();
             if (searchController.showSearch) {
                 $scope.showLoadingScreen = false;
@@ -216,5 +222,9 @@ angular.module('tantalim.desktop')
             }
         }
 
-        initializePage();
+        // $locationChangeSuccess apparently gets called automatically, so don't initialize explicitly
+        // initializePage();
+        $scope.$on('$locationChangeSuccess', function () {
+            initializePage();
+        });
     });

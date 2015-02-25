@@ -229,8 +229,9 @@ angular.module('tantalim.desktop')
 
 // Source: public/js/page/main.js
 angular.module('tantalim.desktop')
-    .config(function ($locationProvider) {
+    .config(function ($locationProvider, $logProvider) {
         $locationProvider.html5Mode(true).hashPrefix('!');
+        $logProvider.debugEnabled(true);
     })
 ;
 
@@ -240,21 +241,21 @@ angular.module('tantalim.desktop')
 
 angular.module('tantalim.desktop')
     .controller('PageController',
-    function ($scope, $location, PageDefinition, PageService, ModelCursor, ModelSaver, PageCursor, keyboardManager) {
+    function ($scope, $log, $location, PageDefinition, PageService, ModelCursor, ModelSaver, PageCursor, keyboardManager, $window) {
         $scope.showLoadingScreen = true;
-        if (PageDefinition.error) {
-            console.error('Error retrieving PageDefinition: ', PageDefinition.error);
-            $scope.serverStatus = '';
-            $scope.serverError = PageDefinition.error;
-            if (PageDefinition.message) {
-                $scope.serverError += ': ' + PageDefinition.message;
-            }
-            return;
-        }
-        if (!PageDefinition.page.model) {
-            $scope.serverError = PageDefinition.page.name + ' page does not have a model defined.';
-            return;
-        }
+        //if (PageDefinition.error) {
+        //    console.error('Error retrieving PageDefinition: ', PageDefinition.error);
+        //    $scope.serverStatus = '';
+        //    $scope.serverError = PageDefinition.error;
+        //    if (PageDefinition.message) {
+        //        $scope.serverError += ': ' + PageDefinition.message;
+        //    }
+        //    return;
+        //}
+        //if (!PageDefinition.page.model) {
+        //    $scope.serverError = PageDefinition.page.name + ' page does not have a model defined.';
+        //    return;
+        //}
 
         function SearchController() {
             var searchPath = '/search';
@@ -273,15 +274,15 @@ angular.module('tantalim.desktop')
                 },
                 filter: function (newFilter) {
                     if (newFilter) {
-                        $location.search('f', newFilter);
+                        $location.search('filter', newFilter);
                     }
-                    return $location.search().f;
+                    return $location.search().filter;
                 },
                 page: function (newPage) {
                     if (newPage) {
-                        $location.search('p', newPage);
+                        $location.search('page', newPage);
                     }
-                    return $location.search().p;
+                    return $location.search().page;
                 }
             };
             return self;
@@ -291,6 +292,7 @@ angular.module('tantalim.desktop')
         $scope.searchController = searchController;
 
         function loadData() {
+            //$log.debug('loadData()');
             $scope.serverStatus = 'Loading data...';
             $scope.serverError = '';
 
@@ -302,7 +304,7 @@ angular.module('tantalim.desktop')
                         return;
                     }
                     if (d.data.error) {
-                        $scope.serverError = 'Error reading data from server: ' + d.data.error;
+                        $scope.serverError = 'Error reading data from server: ' + d.data.error.message;
                         return;
                     }
                     $scope.filterString = searchController.filter();
@@ -372,11 +374,10 @@ angular.module('tantalim.desktop')
         })();
 
         (function addFormMethodsToScope(){
-            $scope.rowChanged = function (thisInstance) {
-                ModelCursor.change(thisInstance);
-            };
+            $scope.rowChanged = ModelCursor.change;
 
             $scope.refresh = function () {
+                $log.debug('refresh()');
                 if (ModelCursor.dirty && !$scope.serverStatus) {
                     $scope.serverStatus = 'There are unsaved changes. Click [Refresh] again to discard those changes.';
                     return;
@@ -388,7 +389,7 @@ angular.module('tantalim.desktop')
                 $scope.serverStatus = 'Saving...';
                 ModelSaver.save(PageDefinition.page.model, ModelCursor.root, function (status) {
                     $scope.serverStatus = '';
-                    $scope.serverError = status;
+                    $scope.serverError = status.toString();
                     if (!status) {
                         ModelCursor.dirty = false;
                     }
@@ -400,11 +401,12 @@ angular.module('tantalim.desktop')
             $scope.filterValues = {};
             $scope.filterComparators = {};
 
-            _.forEach(PageDefinition.page.model.fields, function (field) {
+            angular.forEach(PageDefinition.page.model.fields, function (field) {
                 $scope.filterComparators[field.name] = 'Contains';
             });
 
             $scope.runSearch = function () {
+                $log.debug('runSearch()');
                 if ($scope.filterString) {
                     searchController.filter($scope.filterString);
                 } else {
@@ -424,7 +426,7 @@ angular.module('tantalim.desktop')
             var setFilterString = function (filterValues, filterComparators) {
                 var filterString = '';
 
-                _.forEach($scope.filterValues, function (value, fieldName) {
+                angular.forEach($scope.filterValues, function (value, fieldName) {
                     if (value) {
                         if (filterString.length > 0) {
                             filterString += ' AND ';
@@ -439,11 +441,16 @@ angular.module('tantalim.desktop')
             $scope.filterString = '';
         })();
 
-        $scope.$on('$locationChangeSuccess', function () {
-            initializePage();
-        });
+        $scope.link = function(targetPage, filter, modelName) {
+            var data = ModelCursor.current.instances[modelName];
+            _.forEach(data.data, function(value, key) {
+                filter = filter.replace('[' + key + ']', data.data[key]);
+            });
+            $window.location.href = '/page/' + targetPage + '/?filter=' + filter;
+        };
 
         function initializePage() {
+            $log.debug('initializePage()');
             searchController.initialize();
             if (searchController.showSearch) {
                 $scope.showLoadingScreen = false;
@@ -452,7 +459,11 @@ angular.module('tantalim.desktop')
             }
         }
 
-        initializePage();
+        // $locationChangeSuccess apparently gets called automatically, so don't initialize explicitly
+        // initializePage();
+        $scope.$on('$locationChangeSuccess', function () {
+            initializePage();
+        });
     });
 
 // Source: public/js/page/pageCursor.js
@@ -460,7 +471,7 @@ angular.module('tantalim.desktop')
 
 angular.module('tantalim.desktop')
     .factory('PageCursor', function ($log) {
-        //$log.debug('Starting PageCursor');
+        $log.debug('Starting PageCursor');
 
         var cursor = {
             /**
@@ -480,16 +491,11 @@ angular.module('tantalim.desktop')
         var SmartSection = function (pageSection) {
             var self = {
                 name: pageSection.name,
-                viewMode: pageSection.viewMode || 'single'
+                viewMode: pageSection.viewMode
             };
             cursor.sections[pageSection.name] = self;
 
             _.forEach(pageSection.children, function (child) {
-                new SmartSection(child);
-            });
-
-            _.forEach(pageSection.page, function (child) {
-                $log.warn('Using child pages is deprecated', self, child);
                 new SmartSection(child);
             });
         };
@@ -589,16 +595,11 @@ angular.module('tantalim.common')
             clear();
 
             var fillModelMap = function (model, parentName) {
-                var modelName = model.name;
-                if (modelName) {
-                    modelMap[modelName] = model;
-                    model.parent = parentName;
-                    _.forEach(model.children, function (childModel) {
-                        fillModelMap(childModel, modelName);
-                    });
-                } else {
-                    console.warn('failed to fill modelMap for %s', model);
-                }
+                modelMap[model.name] = model;
+                model.parent = parentName; //
+                _.forEach(model.children, function (childModel) {
+                    fillModelMap(childModel, model.name);
+                });
             };
 
             var resetCurrents = function (value, modelName) {
@@ -632,8 +633,14 @@ angular.module('tantalim.common')
                 }
             };
 
+            /**
+             *
+             * @param model
+             * @param row
+             * @param nodeSet
+             */
             var SmartNodeInstance = function (model, row, nodeSet) {
-                //$log.debug('Adding SmartNodeInstance for ', model, row);
+                $log.debug('Adding SmartNodeInstance id:%s for model `%s` onto set ', row.id, model.name, nodeSet);
                 var defaults = {
                     _type: 'SmartNodeInstance',
                     /**
@@ -710,33 +717,38 @@ angular.module('tantalim.common')
                 }
 
                 if (row.id === null) {
-                    //$log.debug('id is null, so assume record is newly inserted', row);
+                    $log.debug('id is null, so assume record is newly inserted', row);
                     newInstance.state = 'INSERTED';
                     newInstance.id = GUID();
+                    $log.debug('defaulting field values', model.fields);
                     _.forEach(model.fields, function (field) {
                         setFieldDefault(field, row);
                     });
-                    return newInstance;
                 }
 
-                newInstance.addChildModel = function(childModel, childDataSet) {
-                    var modelName = childModel.name;
-                    var smartSet = new SmartNodeSet(childModel, childDataSet, newInstance);
-                    newInstance.childModels[modelName] = smartSet;
+                newInstance.addChildModel = function(childModelName, childDataSet) {
+                    var smartSet = new SmartNodeSet(modelMap[childModelName], childDataSet, newInstance);
+                    newInstance.childModels[childModelName] = smartSet;
                 };
 
                 if (row.children) {
                     _.forEach(model.children, function(childModel) {
-                        var modelName = childModel.name;
-                        newInstance.addChildModel(childModel, row.children[modelName]);
+                        newInstance.addChildModel(childModel.name, row.children[childModel.name]);
                     });
                 }
 
+                $log.debug('Done creating newInstance');
                 return newInstance;
             };
 
+            /**
+             *
+             * @param model
+             * @param data
+             * @param parentInstance
+             */
             var SmartNodeSet = function (model, data, parentInstance) {
-                //console.debug('Adding SmartNodeSet for ' + model.name);
+                $log.debug('Adding SmartNodeSet for ' + model.name);
                 //console.debug(model);
                 var defaults = {
                     _type: 'SmartNodeSet',
@@ -894,6 +906,7 @@ angular.module('tantalim.common')
                 newSet.model.orderBy = model.orderBy;
                 newSet.parentInstance = parentInstance;
                 newSet.insert = function () {
+                    $log.debug('Inserting new instance with model')
                     var smartInstance = new SmartNodeInstance(model, {}, newSet);
                     newSet.rows.push(smartInstance);
                     newSet.moveToBottom();
@@ -909,9 +922,6 @@ angular.module('tantalim.common')
                     if (newSet.rows.length) {
                         newSet.currentIndex = 0;
                     }
-                } else {
-                    console.warn('SmartNodeSet expected data to be array but got the following:');
-                    console.warn(data);
                 }
 
                 return newSet;
@@ -929,7 +939,7 @@ angular.module('tantalim.common')
                 root: rootSet,
                 current: current,
                 setRoot: function (model, data) {
-                    //$log.debug('Setting Root data');
+                    $log.debug('Setting Root data');
                     //$log.debug(model);
                     //$log.debug(data);
                     clear();
@@ -950,11 +960,10 @@ angular.module('tantalim.common')
                 },
                 getCurrentSet: function (modelName) {
                     if (current.sets[modelName] === undefined) {
+                        $log.debug('current set for %s hasn\'t been created yet, creating now.', modelName);
                         var parentName = modelMap[modelName].parent;
                         var parentInstance = current.instances[parentName];
-                        parentInstance.addChildModel({
-                            data: {modelName: modelName}
-                        }, []);
+                        parentInstance.addChildModel(modelName);
                         resetCurrents(self.root);
                     }
                     return current.sets[modelName];
@@ -965,8 +974,11 @@ angular.module('tantalim.common')
                     console.log('ModelCursor.modelMap', modelMap);
                     console.log('ModelCursor.current', self.current);
                 },
-                change: function (instance) {
-                    console.info('changing', instance);
+                change: function (instance, fieldName) {
+                    if (fieldName === 'TableName') {
+                        var rowData = instance.data;
+                        rowData.TableSQL = 'app_' + rowData[fieldName];
+                    }
                     if (instance.state === 'NO_CHANGE' || instance.state === 'CHILD_UPDATED') {
                         self.dirty = true;
                         instance.state = 'UPDATED';
@@ -1113,7 +1125,7 @@ angular.module('tantalim.common')
                                     success('Failed to save data ' + data.error);
                                 } else {
                                     rootSet.reloadFromServer(data);
-                                    success();
+                                    success('');
                                 }
                             } else {
                                 success('Failed ' + status);
@@ -1149,13 +1161,13 @@ angular.module('tantalim.common')
             readModelData: function (modelName, filterString, pageNumber) {
                 var url = '/data/' + modelName + '?';
                 if (filterString) {
-                    url += 'filterString=' + filterString;
+                    url += 'filter=' + filterString;
                 }
                 if (pageNumber) {
                     if (filterString) {
                         url += '&';
                     }
-                    url += 'pageNumber=' + pageNumber;
+                    url += 'page=' + pageNumber;
                 }
                 return $http.get(url);
             }
