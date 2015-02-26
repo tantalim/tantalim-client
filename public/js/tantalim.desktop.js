@@ -276,13 +276,13 @@ angular.module('tantalim.desktop')
                     if (newFilter) {
                         $location.search('filter', newFilter);
                     }
-                    return $location.search().filter;
+                    return $location.search().f;
                 },
                 page: function (newPage) {
                     if (newPage) {
                         $location.search('page', newPage);
                     }
-                    return $location.search().page;
+                    return $location.search().p;
                 }
             };
             return self;
@@ -589,10 +589,15 @@ angular.module('tantalim.common')
 
             var clear = function() {
                 rootSet = null;
-                current = {sets: {}, instances: {}};
+                current = {sets: {}, instances: {}, gridSelection: {}, editing: {}};
                 modelMap = {};
             };
             clear();
+
+            var MOUSE = {
+                LEFT: 1,
+                RIGHT: 3
+            };
 
             var fillModelMap = function (model, parentName) {
                 modelMap[model.name] = model;
@@ -1017,6 +1022,61 @@ angular.module('tantalim.common')
                     },
                     next: function (modelName) {
                         current.sets[modelName].moveNext();
+                    },
+                    dblclick: function (modelName, row, column) {
+                        if (event.which === MOUSE.LEFT) {
+                            current.editing[modelName] = {
+                                row: row,
+                                column: column
+                            };
+                        }
+                    },
+                    cellIsEditing: function (modelName, row, column) {
+                        //return true;
+                        return current.editing[modelName]
+                            && current.editing[modelName].row === row
+                            && current.editing[modelName].column === column;
+                    },
+                    escape: function () {
+                        current.editing = {};
+                    },
+                    mousedown: function (modelName, row, column) {
+                        if (event.which === MOUSE.LEFT) {
+                            current.gridSelection = {
+                                selecting: true,
+                                model: modelName,
+                                rows: {
+                                    start: row,
+                                    end: row
+                                },
+                                columns: {}
+                            };
+                            self.action.mouseover(modelName, row, column);
+                        }
+                    },
+                    mouseover: function (modelName, row, column) {
+                        if (event.which === MOUSE.LEFT) {
+                            if (current.gridSelection.selecting) {
+                                if (modelName === current.gridSelection.model) {
+                                    current.gridSelection.rows.end = row;
+                                    current.gridSelection.columns[column] = true;
+                                }
+                            }
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                    },
+                    mouseup: function (modelName, row, column) {
+                        if (event.which === MOUSE.LEFT) {
+                            current.gridSelection.selecting = false;
+                        }
+                    },
+                    cellIsSelected: function (modelName, row, column) {
+                        return current.gridSelection.model === modelName
+                            && current.gridSelection.rows.start <= row
+                            && current.gridSelection.rows.end >= row
+                            && current.gridSelection.columns[column]
+                            ;
                     }
                 }
             };

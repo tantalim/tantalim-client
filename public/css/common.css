@@ -42,29 +42,6 @@ body {
     font-size: 0.9em;
 }
 
-/*tr.success .text-edit {*/
-/*display: block;*/
-/*padding: 8px;*/
-/*border: 0px;*/
-/*}*/
-
-.text-edit {
-    display: none;
-    width: 100%;
-}
-
-/*tr.success .text-view {*/
-/*display: none;*/
-/*}*/
-
-/*.text-view {*/
-/*display: block;*/
-/*}*/
-
-/*tr.success td.text-display {*/
-/*padding: 0px;*/
-/*}*/
-
 div.smart-select {
     position: absolute;
     height: 300px;
@@ -102,3 +79,34 @@ div.smart-select {
 [ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
     display: none !important;
 }
+
+.childSection {
+    margin-left: 30px;
+    position: relative;
+}
+
+.childSection .icon-indent {
+    position: absolute;
+    top: 9px;
+    left: -17px;
+    cursor: pointer;
+}
+
+
+/** For the Grid **/
+
+table.tnt-grid td.text-display {
+    position: relative;
+}
+
+td.text-display .text-edit {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    padding: 0px 4px;
+    border: 1px solid rgb(143, 181, 224);
+    z-index: 10;
+}
+
