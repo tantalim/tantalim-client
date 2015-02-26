@@ -618,6 +618,7 @@ angular.module('tantalim.common')
                     },
                     dblclick: function (modelName, row, column) {
                         if (event.which === MOUSE.LEFT) {
+                            current.editing = {};
                             current.editing[modelName] = {
                                 row: row,
                                 column: column
@@ -635,6 +636,11 @@ angular.module('tantalim.common')
                     },
                     mousedown: function (modelName, row, column) {
                         if (event.which === MOUSE.LEFT) {
+                            if (self.action.cellIsEditing(modelName, row, column)) {
+                                return;
+                            } else {
+                                current.editing = {};
+                            }
                             current.gridSelection = {
                                 selecting: true,
                                 model: modelName,
@@ -649,14 +655,17 @@ angular.module('tantalim.common')
                     },
                     mouseover: function (modelName, row, column) {
                         if (event.which === MOUSE.LEFT) {
+                            if (self.action.cellIsEditing(modelName, row, column)) {
+                                return;
+                            }
                             if (current.gridSelection.selecting) {
                                 if (modelName === current.gridSelection.model) {
                                     current.gridSelection.rows.end = row;
                                     current.gridSelection.columns[column] = true;
                                 }
+                                event.preventDefault();
+                                event.stopPropagation();
                             }
-                            event.preventDefault();
-                            event.stopPropagation();
                         }
                     },
                     mouseup: function (modelName, row, column) {
