@@ -39,13 +39,26 @@ angular.module('tantalim.desktop')
                     if (newFilter) {
                         $location.search('filter', newFilter);
                     }
-                    return $location.search().f;
+                    return $location.search().filter;
                 },
+                maxPages: 99, // TODO get the max from server
                 page: function (newPage) {
                     if (newPage) {
                         $location.search('page', newPage);
                     }
-                    return $location.search().p;
+                    return parseInt($location.search().page || 1);
+                },
+                previousPage: function () {
+                    var currentPage = self.page();
+                    if (currentPage > 1) {
+                        self.page(currentPage - 1);
+                    }
+                },
+                nextPage: function () {
+                    var currentPage = self.page();
+                    if (currentPage < self.maxPages) {
+                        self.page(currentPage + 1);
+                    }
                 }
             };
             return self;
@@ -112,21 +125,23 @@ angular.module('tantalim.desktop')
                 }
             });
             keyboardManager.bind('shift+up', function () {
-                var currentPage = searchController.page() || 1;
-                if (currentPage > 1) {
-                    searchController.page(currentPage - 1);
-                }
+                searchController.previousPage();
             });
             keyboardManager.bind('shift+down', function () {
-                var currentPage = searchController.page() || 1;
-                var maxPages = 999; // TODO get the max from server
-                if (currentPage < maxPages) {
-                    searchController.page(currentPage + 1);
-                }
+                searchController.nextPage();
             });
 
             keyboardManager.bind('ctrl+s', function () {
                 $scope.save();
+            });
+            keyboardManager.bind('meta+s', function () {
+                $scope.save();
+            });
+            keyboardManager.bind('meta+c', function () {
+                $scope.action.copy();
+            });
+            keyboardManager.bind('meta+v', function () {
+                $scope.action.paste();
             });
             keyboardManager.bind('ctrl+shift+d', function () {
                 console.log('DEBUGGING');

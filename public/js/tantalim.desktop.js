@@ -276,13 +276,26 @@ angular.module('tantalim.desktop')
                     if (newFilter) {
                         $location.search('filter', newFilter);
                     }
-                    return $location.search().f;
+                    return $location.search().filter;
                 },
+                maxPages: 99, // TODO get the max from server
                 page: function (newPage) {
                     if (newPage) {
                         $location.search('page', newPage);
                     }
-                    return $location.search().p;
+                    return parseInt($location.search().page || 1);
+                },
+                previousPage: function () {
+                    var currentPage = self.page();
+                    if (currentPage > 1) {
+                        self.page(currentPage - 1);
+                    }
+                },
+                nextPage: function () {
+                    var currentPage = self.page();
+                    if (currentPage < self.maxPages) {
+                        self.page(currentPage + 1);
+                    }
                 }
             };
             return self;
@@ -349,21 +362,23 @@ angular.module('tantalim.desktop')
                 }
             });
             keyboardManager.bind('shift+up', function () {
-                var currentPage = searchController.page() || 1;
-                if (currentPage > 1) {
-                    searchController.page(currentPage - 1);
-                }
+                searchController.previousPage();
             });
             keyboardManager.bind('shift+down', function () {
-                var currentPage = searchController.page() || 1;
-                var maxPages = 999; // TODO get the max from server
-                if (currentPage < maxPages) {
-                    searchController.page(currentPage + 1);
-                }
+                searchController.nextPage();
             });
 
             keyboardManager.bind('ctrl+s', function () {
                 $scope.save();
+            });
+            keyboardManager.bind('meta+s', function () {
+                $scope.save();
+            });
+            keyboardManager.bind('meta+c', function () {
+                $scope.action.copy();
+            });
+            keyboardManager.bind('meta+v', function () {
+                $scope.action.paste();
             });
             keyboardManager.bind('ctrl+shift+d', function () {
                 console.log('DEBUGGING');
@@ -586,11 +601,13 @@ angular.module('tantalim.common')
             var rootSet;
             var current;
             var modelMap;
+            var clipboard;
 
             var clear = function() {
                 rootSet = null;
                 current = {sets: {}, instances: {}, gridSelection: {}, editing: {}};
                 modelMap = {};
+                clipboard = {};
             };
             clear();
 
@@ -848,6 +865,7 @@ angular.module('tantalim.common')
                         if (removed && removed.length > 0) {
                             markParentOfThisInstanceChanged(removed[0]);
                             this.deleted.push(removed[0]);
+                            self.dirty = true;
                         }
                         if (this.currentIndex >= this.rows.length) {
                             this.currentIndex = this.rows.length - 1;
@@ -1005,7 +1023,18 @@ angular.module('tantalim.common')
                     },
                     delete: function (modelName, index) {
                         current.sets[modelName].delete(index);
-                        self.dirty = true;
+                    },
+                    deleteSelected: function (modelName) {
+                        if (current.gridSelection.model === modelName) {
+                            for(var row = current.gridSelection.rows.start; row <= current.gridSelection.rows.end; row++) {
+                                current.sets[modelName].delete(current.gridSelection.rows.start);
+                            }
+                            if (current.sets[modelName].rows.length > 0) {
+                                current.gridSelection.rows.end = current.gridSelection.rows.start;
+                            } else {
+                                current.gridSelection = {};
+                            }
+                        }
                     },
                     deleteEnabled: function (modelName) {
                         return current.instances[modelName] !== null;
@@ -1058,6 +1087,7 @@ angular.module('tantalim.common')
                                 columns: {}
                             };
                             self.action.mouseover(modelName, row, column);
+                            self.action.select(modelName, row);
                         }
                     },
                     mouseover: function (modelName, row, column) {
@@ -1086,6 +1116,15 @@ angular.module('tantalim.common')
                             && current.gridSelection.rows.end >= row
                             && current.gridSelection.columns[column]
                             ;
+                    },
+                    copy: function () {
+                        if (current.gridSelection) {
+                            clipboard = "foo";
+
+                        }
+                    },
+                    paste: function () {
+
                     }
                 }
             };

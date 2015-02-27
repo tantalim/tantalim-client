@@ -179,11 +179,13 @@ angular.module('tantalim.common')
             var rootSet;
             var current;
             var modelMap;
+            var clipboard;
 
             var clear = function() {
                 rootSet = null;
                 current = {sets: {}, instances: {}, gridSelection: {}, editing: {}};
                 modelMap = {};
+                clipboard = {};
             };
             clear();
 
@@ -441,6 +443,7 @@ angular.module('tantalim.common')
                         if (removed && removed.length > 0) {
                             markParentOfThisInstanceChanged(removed[0]);
                             this.deleted.push(removed[0]);
+                            self.dirty = true;
                         }
                         if (this.currentIndex >= this.rows.length) {
                             this.currentIndex = this.rows.length - 1;
@@ -598,7 +601,18 @@ angular.module('tantalim.common')
                     },
                     delete: function (modelName, index) {
                         current.sets[modelName].delete(index);
-                        self.dirty = true;
+                    },
+                    deleteSelected: function (modelName) {
+                        if (current.gridSelection.model === modelName) {
+                            for(var row = current.gridSelection.rows.start; row <= current.gridSelection.rows.end; row++) {
+                                current.sets[modelName].delete(current.gridSelection.rows.start);
+                            }
+                            if (current.sets[modelName].rows.length > 0) {
+                                current.gridSelection.rows.end = current.gridSelection.rows.start;
+                            } else {
+                                current.gridSelection = {};
+                            }
+                        }
                     },
                     deleteEnabled: function (modelName) {
                         return current.instances[modelName] !== null;
@@ -651,6 +665,7 @@ angular.module('tantalim.common')
                                 columns: {}
                             };
                             self.action.mouseover(modelName, row, column);
+                            self.action.select(modelName, row);
                         }
                     },
                     mouseover: function (modelName, row, column) {
@@ -679,6 +694,15 @@ angular.module('tantalim.common')
                             && current.gridSelection.rows.end >= row
                             && current.gridSelection.columns[column]
                             ;
+                    },
+                    copy: function () {
+                        if (current.gridSelection) {
+                            clipboard = "foo";
+
+                        }
+                    },
+                    paste: function () {
+
                     }
                 }
             };

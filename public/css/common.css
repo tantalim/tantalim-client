@@ -99,7 +99,7 @@ table.tnt-grid td.text-display {
     position: relative;
 }
 
-td.text-display .text-edit {
+table.tnt-grid td.text-display .text-edit {
     position: absolute;
     top: 0;
     left: 0;
@@ -108,5 +108,23 @@ td.text-display .text-edit {
     padding: 0px 4px;
     border: 1px solid rgb(143, 181, 224);
     z-index: 10;
+}
+
+table.tnt-grid .tnt-grid-corner {
+}
+
+table.tnt-grid tr th {
+    cursor: pointer;
+    background-color: #EEEEEE;
+}
+
+table.tnt-grid td.tnt-grid-left-nav {
+    cursor: pointer;
+    width: 3em;
+    font-size: x-small;
+    text-align: right;
+    background-color: #EEEEEE;
+    vertical-align: middle;
+    padding: 0px 5px 0px 0px;
 }
 
