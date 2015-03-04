@@ -305,7 +305,7 @@ angular.module('tantalim.desktop')
         $scope.searchController = searchController;
 
         function loadData() {
-            //$log.debug('loadData()');
+            $log.info('loadData()');
             $scope.serverStatus = 'Loading data...';
             $scope.serverError = '';
 
@@ -322,7 +322,8 @@ angular.module('tantalim.desktop')
                     }
                     $scope.filterString = searchController.filter();
                     $scope.pageNumber = searchController.page();
-                    ModelCursor.setRoot(PageDefinition.page.model, d.data);
+                    searchController.maxPages = d.data.maxPages;
+                    ModelCursor.setRoot(PageDefinition.page.model, d.data.rows);
 
                     $scope.ModelCursor = ModelCursor;
                     $scope.current = ModelCursor.current;
@@ -360,12 +361,6 @@ angular.module('tantalim.desktop')
                 if ($scope.currentModel) {
                     $scope.action.insert($scope.currentModel);
                 }
-            });
-            keyboardManager.bind('shift+up', function () {
-                searchController.previousPage();
-            });
-            keyboardManager.bind('shift+down', function () {
-                searchController.nextPage();
             });
 
             keyboardManager.bind('ctrl+s', function () {

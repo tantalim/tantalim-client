@@ -82,7 +82,7 @@ angular.module('tantalim.select', [])
                                     console.error(d);
                                     return;
                                 }
-                                ctrl.items = d.data;
+                                ctrl.items = d.data.rows;
                                 openItems();
                             });
                         } else {
