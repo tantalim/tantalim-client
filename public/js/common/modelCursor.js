@@ -15,7 +15,7 @@ angular.module('tantalim.common')
             var modelMap;
             var clipboard;
 
-            var clear = function() {
+            var clear = function () {
                 rootSet = null;
                 current = {sets: {}, instances: {}, gridSelection: {}, editing: {}};
                 modelMap = {};
@@ -135,7 +135,7 @@ angular.module('tantalim.common')
                         FXN: "fxn"
                     };
 
-                    switch(field.fieldDefault.type) {
+                    switch (field.fieldDefault.type) {
                         case DEFAULT_TYPE.FIELD:
                             row.data[field.name] = getFieldValue(field.fieldDefault.value, row);
                             break;
@@ -160,13 +160,13 @@ angular.module('tantalim.common')
                     });
                 }
 
-                newInstance.addChildModel = function(childModelName, childDataSet) {
+                newInstance.addChildModel = function (childModelName, childDataSet) {
                     var smartSet = new SmartNodeSet(modelMap[childModelName], childDataSet, newInstance);
                     newInstance.childModels[childModelName] = smartSet;
                 };
 
                 if (row.children) {
-                    _.forEach(model.children, function(childModel) {
+                    _.forEach(model.children, function (childModel) {
                         newInstance.addChildModel(childModel.name, row.children[childModel.name]);
                     });
                 }
@@ -256,7 +256,7 @@ angular.module('tantalim.common')
                         this.moveTo(this.rows.length - 1);
                     },
                     findIndex: function (id) {
-                        return _.findIndex(this.rows, function(row) {
+                        return _.findIndex(this.rows, function (row) {
                             return row.id === id;
                         });
                     },
@@ -404,7 +404,7 @@ angular.module('tantalim.common')
                     return current.sets[modelName];
                 },
                 dirty: false,
-                toConsole: function() {
+                toConsole: function () {
                     console.log('ModelCursor.rootSet', self.root);
                     console.log('ModelCursor.modelMap', modelMap);
                     console.log('ModelCursor.current', self.current);
@@ -438,7 +438,7 @@ angular.module('tantalim.common')
                     },
                     deleteSelected: function (modelName) {
                         if (current.gridSelection.model === modelName) {
-                            for(var row = current.gridSelection.rows.start; row <= current.gridSelection.rows.end; row++) {
+                            for (var row = current.gridSelection.rows.start; row <= current.gridSelection.rows.end; row++) {
                                 current.sets[modelName].delete(current.gridSelection.rows.start);
                             }
                             if (current.sets[modelName].rows.length > 0) {
@@ -531,12 +531,32 @@ angular.module('tantalim.common')
                     },
                     copy: function () {
                         if (current.gridSelection) {
-                            clipboard = "foo";
-
+                            clipboard = _.cloneDeep(current.gridSelection);
                         }
                     },
                     paste: function () {
+                        function getRows(clipboard, minRows) {
+                            var copyStart = clipboard.rows.start;
+                            var copyEnd = 1 + clipboard.rows.end;
+                            if (minRows > copyEnd - copyStart) copyEnd = copyStart + minRows;
+                            var from = current.sets[clipboard.model].rows;
+                            return _.slice(from, copyStart, copyEnd);
+                        }
 
+                        if (clipboard && current.gridSelection) {
+                            var fromRows = getRows(clipboard);
+                            var toRows = getRows(current.gridSelection);
+
+                            var counter = 0;
+                            _.forEach(toRows, function (targetRow) {
+                                if (counter >= fromRows.length) counter = 0;
+                                var fromRow = fromRows[counter];
+                                _.forEach(current.gridSelection.columns, function (yes, columnName) {
+                                    targetRow.data[columnName] = fromRow.data[columnName];
+                                });
+                                counter++;
+                            });
+                        }
                     }
                 }
             };
