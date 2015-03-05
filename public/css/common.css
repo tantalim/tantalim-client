@@ -110,6 +110,10 @@ table.tnt-grid td.text-display .text-edit {
     z-index: 10;
 }
 
+i.disabled {
+    color: #DDDDDD
+}
+
 table.tnt-grid .tnt-grid-corner {
 }
 
