@@ -5,11 +5,6 @@
 angular.module('tantalim.common')
     .factory('ModelCursor', ['$filter', '$log', 'GUID',
         function ($filter, $log, GUID) {
-//            $log.debug = function () {
-//                // Override and ignore log output for now
-//                // TODO figure out how to set this in a smarter way
-//            };
-
             var rootSet;
             var current;
             var modelMap;
@@ -101,10 +96,46 @@ angular.module('tantalim.common')
                     delete: function () {
                         this.state = 'DELETED';
                     },
-                    update: function () {
-                        if (this.state === 'NO_CHANGE') {
-                            this.state = 'UPDATED';
+                    isDirty: function() {
+                        //console.info("Checking this.state" + this.state + " for " + this.id);
+                        return this.state !== 'NO_CHANGE';
+                    },
+                    toggle: function (fieldName, required) {
+                        var currentValue = this.data[fieldName];
+                        var newValue = true;
+                        if (currentValue === true) newValue = false;
+                        if (currentValue === undefined) newValue = true;
+                        if (currentValue === false) {
+                            if (required) newValue = true;
+                            else newValue = null;
                         }
+                        console.info("Setting ", fieldName, newValue);
+                        this.update(fieldName, newValue);
+                    },
+                    update: function (fieldName, newValue, oldValue) {
+                        // TODO get field defaults to work
+                        if (fieldName) {
+                            if (fieldName === 'TableName' && newValue) {
+                                this.data.TableSQL = 'app_' + this.data[fieldName].toLowerCase();
+                            }
+                            if (newValue !== undefined) {
+                                this.data[fieldName] = newValue;
+                            }
+                        }
+                        if (this.state === 'NO_CHANGE' || this.state === 'CHILD_UPDATED') {
+                            this.state = 'UPDATED';
+                            this.updateParent();
+                        }
+                    },
+                    updateParent: function () {
+                        if (!this.nodeSet) return;
+                        console.info(this);
+                        var parent = this.nodeSet.parentInstance;
+                        if (parent && parent.state === 'NO_CHANGE') {
+                            parent.state = 'CHILD_UPDATED';
+                            parent.updateParent();
+                        }
+
                     }
                 };
 
@@ -260,6 +291,14 @@ angular.module('tantalim.common')
                             return row.id === id;
                         });
                     },
+                    isDirty: function() {
+                        if (this.deleted && this.deleted.length > 0) return true;
+
+                        var dirtyRow = _.find(this.rows, function(row) {
+                            return row.isDirty();
+                        });
+                        return !_.isEmpty(dirtyRow);
+                    },
                     delete: function (index) {
                         if (this.rows.length <= 0) {
                             return;
@@ -275,9 +314,8 @@ angular.module('tantalim.common')
                         });
 
                         if (removed && removed.length > 0) {
-                            markParentOfThisInstanceChanged(removed[0]);
+                            removed[0].updateParent();
                             this.deleted.push(removed[0]);
-                            self.dirty = true;
                         }
                         if (this.currentIndex >= this.rows.length) {
                             this.currentIndex = this.rows.length - 1;
@@ -345,7 +383,7 @@ angular.module('tantalim.common')
                     var smartInstance = new SmartNodeInstance(model, {}, newSet);
                     newSet.rows.push(smartInstance);
                     newSet.moveToBottom();
-                    markParentOfThisInstanceChanged(smartInstance);
+                    smartInstance.updateParent();
                     return smartInstance;
                 };
 
@@ -361,14 +399,6 @@ angular.module('tantalim.common')
 
                 return newSet;
             };
-
-            function markParentOfThisInstanceChanged(instance) {
-                var parent = instance.nodeSet.parentInstance;
-                if (parent && parent.state === 'NO_CHANGE') {
-                    parent.state = 'CHILD_UPDATED';
-                    markParentOfThisInstanceChanged(parent);
-                }
-            }
 
             var self = {
                 root: rootSet,
@@ -387,7 +417,6 @@ angular.module('tantalim.common')
                     self.root = rootSet;
                     resetCurrents(rootSet);
                     self.current = current;
-                    self.dirty = false;
                     //console.log('setRoot done: current=', current);
                 },
                 getCurrentInstance: function (modelName) {
@@ -403,22 +432,13 @@ angular.module('tantalim.common')
                     }
                     return current.sets[modelName];
                 },
-                dirty: false,
+                dirty: function () {
+                    return rootSet.isDirty();
+                },
                 toConsole: function () {
                     console.log('ModelCursor.rootSet', self.root);
                     console.log('ModelCursor.modelMap', modelMap);
                     console.log('ModelCursor.current', self.current);
-                },
-                change: function (instance, fieldName) {
-                    if (fieldName === 'TableName') {
-                        var rowData = instance.data;
-                        rowData.TableSQL = 'app_' + rowData[fieldName];
-                    }
-                    if (instance.state === 'NO_CHANGE' || instance.state === 'CHILD_UPDATED') {
-                        self.dirty = true;
-                        instance.state = 'UPDATED';
-                        markParentOfThisInstanceChanged(instance);
-                    }
                 },
                 action: {
                     length: function (modelName) {
@@ -429,8 +449,6 @@ angular.module('tantalim.common')
                     },
                     insert: function (modelName) {
                         var newInstance = self.getCurrentSet(modelName).insert();
-                        self.dirty = true;
-                        //resetCurrents(newInstance, modelName);
                         return newInstance;
                     },
                     delete: function (modelName, index) {
@@ -464,7 +482,7 @@ angular.module('tantalim.common')
                     next: function (modelName) {
                         current.sets[modelName].moveNext();
                     },
-                    dblclick: function (modelName, row, column) {
+                    dblclick: function (modelName, column, row) {
                         if (event.which === MOUSE.LEFT) {
                             current.editing = {};
                             current.editing[modelName] = {
@@ -535,14 +553,6 @@ angular.module('tantalim.common')
                         }
                     },
                     paste: function () {
-                        function getRows(clipboard, minRows) {
-                            var copyStart = clipboard.rows.start;
-                            var copyEnd = 1 + clipboard.rows.end;
-                            if (minRows > copyEnd - copyStart) copyEnd = copyStart + minRows;
-                            var from = current.sets[clipboard.model].rows;
-                            return _.slice(from, copyStart, copyEnd);
-                        }
-
                         if (clipboard && current.gridSelection) {
                             var fromRows = getRows(clipboard);
                             var toRows = getRows(current.gridSelection);
@@ -552,7 +562,7 @@ angular.module('tantalim.common')
                                 if (counter >= fromRows.length) counter = 0;
                                 var fromRow = fromRows[counter];
                                 _.forEach(current.gridSelection.columns, function (yes, columnName) {
-                                    targetRow.data[columnName] = fromRow.data[columnName];
+                                    targetRow.update(columnName, fromRow.data[columnName]);
                                 });
                                 counter++;
                             });
@@ -560,6 +570,15 @@ angular.module('tantalim.common')
                     }
                 }
             };
+
+            function getRows(clipboard, minRows) {
+                var copyStart = clipboard.rows.start;
+                var copyEnd = 1 + clipboard.rows.end;
+                if (minRows > copyEnd - copyStart) copyEnd = copyStart + minRows;
+                var from = current.sets[clipboard.model].rows;
+                return _.slice(from, copyStart, copyEnd);
+            }
+
             return self;
         }
     ]);

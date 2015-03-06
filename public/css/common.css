@@ -114,8 +114,9 @@ i.disabled {
     color: #DDDDDD
 }
 
-.text-display i.fa-check-square-o {
-    margin-right: -2px;
+i.fa-check-square-o {
+    margin-right: -1px;
+    margin-left: 1px;
 }
 
 table.tnt-grid .tnt-grid-corner {
