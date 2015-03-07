@@ -102,10 +102,6 @@ angular.module('tantalim.mobile')
         };
     }
 );
-// Source: public/js/common/SmartInstance.js
-
-// Source: public/js/common/SmartNodeSet.js
-
 // Source: public/js/common/_app.js
 /* global angular */
 
@@ -652,14 +648,21 @@ angular.module('tantalim.common')
                     next: function (modelName) {
                         current.sets[modelName].moveNext();
                     },
-                    dblclick: function (modelName, column, row) {
+                    dblclick: function (modelName, row, column) {
                         if (event.which === MOUSE.LEFT) {
                             current.editing = {};
                             current.editing[modelName] = {
                                 row: row,
                                 column: column
                             };
+                            current.focus = modelName + "_" + column + "_" + row;
                         }
+                    },
+                    focus: function(modelName, row, column) {
+                        if (self.action.cellIsEditing(modelName, row, column)) {
+                            return current.focus === modelName + "_" + column + "_" + row;
+                        }
+                        return false;
                     },
                     cellIsEditing: function (modelName, row, column) {
                         //return true;

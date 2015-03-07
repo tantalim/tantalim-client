@@ -7,19 +7,20 @@ angular.module('tantalim.desktop', ['tantalim.common', 'ngRoute', 'ui.bootstrap'
 
 angular.module('tantalim.desktop')
     .directive('focusMe', function ($timeout) {
-    return {
-        scope: {trigger: '@focusMe'},
-        link: function (scope, element) {
-            scope.$watch('trigger', function (value) {
-                if (value === "true") {
-                    $timeout(function () {
-                        element[0].focus();
-                    });
-                }
-            });
-        }
-    };
-});
+        return {
+            scope: {trigger: '=focusMe'},
+            link: function (scope, element) {
+                scope.$watch('trigger', function (value) {
+                    if (value === true) {
+                        $timeout(function () {
+                            element[0].focus();
+                            element[0].select();
+                        });
+                    }
+                });
+            }
+        };
+    });
 
 // Source: public/js/page/keyboardManager.js
 /* istanbul ignore next */
@@ -347,12 +348,6 @@ angular.module('tantalim.desktop')
                     $scope.ModelCursor = ModelCursor;
                     $scope.current = ModelCursor.current;
                     $scope.action = ModelCursor.action;
-                    $scope.dblclick = function(pageName, fieldName, index) {
-                        ModelCursor.action.dblclick(pageName, fieldName, index);
-                        $scope.focus = {};
-                        $scope.focus[pageName + "_" + fieldName] = true;
-                        console.info($scope.focus);
-                    };
                     searchController.turnSearchOff();
                     $scope.showLoadingScreen = false;
                 });
@@ -542,10 +537,6 @@ angular.module('tantalim.desktop')
         return cursor;
     }
 );
-
-// Source: public/js/common/SmartInstance.js
-
-// Source: public/js/common/SmartNodeSet.js
 
 // Source: public/js/common/_app.js
 /* global angular */
@@ -1093,14 +1084,21 @@ angular.module('tantalim.common')
                     next: function (modelName) {
                         current.sets[modelName].moveNext();
                     },
-                    dblclick: function (modelName, column, row) {
+                    dblclick: function (modelName, row, column) {
                         if (event.which === MOUSE.LEFT) {
                             current.editing = {};
                             current.editing[modelName] = {
                                 row: row,
                                 column: column
                             };
+                            current.focus = modelName + "_" + column + "_" + row;
                         }
+                    },
+                    focus: function(modelName, row, column) {
+                        if (self.action.cellIsEditing(modelName, row, column)) {
+                            return current.focus === modelName + "_" + column + "_" + row;
+                        }
+                        return false;
                     },
                     cellIsEditing: function (modelName, row, column) {
                         //return true;

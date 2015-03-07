@@ -147,11 +147,9 @@ angular.module('tantalim.desktop')
         })();
 
         (function addFormMethodsToScope(){
-            $scope.rowChanged = ModelCursor.change;
-
             $scope.refresh = function () {
                 $log.debug('refresh()');
-                if (ModelCursor.dirty && !$scope.serverStatus) {
+                if (ModelCursor.dirty() && !$scope.serverStatus) {
                     $scope.serverStatus = 'There are unsaved changes. Click [Refresh] again to discard those changes.';
                     return;
                 }
@@ -163,9 +161,10 @@ angular.module('tantalim.desktop')
                 ModelSaver.save(PageDefinition.page.model, ModelCursor.root, function (status) {
                     $scope.serverStatus = '';
                     $scope.serverError = status.toString();
-                    if (!status) {
-                        ModelCursor.dirty = false;
-                    }
+                    // TODO Make sure all the values get unset for clean state
+                    //if (!status) {
+                    //    ModelCursor.dirty = false;
+                    //}
                 });
             };
         })();
