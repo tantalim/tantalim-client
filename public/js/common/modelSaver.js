@@ -95,9 +95,11 @@ angular.module('tantalim.common')
 
                     $http.post('/data/' + parentModelName, dto).
                         success(function (data, status) {
+                            $log.debug('Returned success');
+                            $log.debug(status);
                             if (status === 200) {
                                 if (data.error) {
-                                    success('Failed to save data ' + data.error);
+                                    success('Failed to save data ' + data.error.message);
                                 } else {
                                     rootSet.reloadFromServer(data);
                                     success('');
@@ -111,9 +113,9 @@ angular.module('tantalim.common')
                         error(function (data, status) {
                             if (status === 404) {
                                 success('Server not found. Check your Internet connection and try again.');
+                            } else {
+                                success('Server returned an unknown ' + status + ' error');
                             }
-                            console.error(status);
-                            console.error(data);
                         });
                 },
 

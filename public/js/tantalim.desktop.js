@@ -415,13 +415,9 @@ angular.module('tantalim.desktop')
 
             $scope.save = function () {
                 $scope.serverStatus = 'Saving...';
-                ModelSaver.save(PageDefinition.page.model, ModelCursor.root, function (status) {
+                ModelSaver.save(PageDefinition.page.model, ModelCursor.root, function (error) {
                     $scope.serverStatus = '';
-                    $scope.serverError = status.toString();
-                    // TODO Make sure all the values get unset for clean state
-                    //if (!status) {
-                    //    ModelCursor.dirty = false;
-                    //}
+                    $scope.serverError = error;
                 });
             };
         })();
@@ -715,6 +711,10 @@ angular.module('tantalim.common')
                         this.update(fieldName, newValue);
                     },
                     update: function (fieldName, newValue, oldValue) {
+                        var field = modelMap[nodeSet.model.modelName].fields[fieldName];
+                        if (!field.updateable) {
+                            return;
+                        }
                         // TODO get field defaults to work
                         if (fieldName) {
                             if (fieldName === 'TableName' && newValue) {
@@ -761,11 +761,12 @@ angular.module('tantalim.common')
                     if (!field.fieldDefault) {
                         return;
                     }
+                    $log.debug('Defaulting field ', field);
 
                     var DEFAULT_TYPE = {
-                        CONSTANT: "constant",
-                        FIELD: "field",
-                        FXN: "fxn"
+                        CONSTANT: "Constant",
+                        FIELD: "Field",
+                        FXN: "Fxn"
                     };
 
                     switch (field.fieldDefault.type) {
@@ -776,18 +777,24 @@ angular.module('tantalim.common')
                             row.data[field.name] = eval(field.fieldDefault.value);
                             break;
                         case DEFAULT_TYPE.CONSTANT:
-                        default:
-                            row.data[field.name] = field.fieldDefault.value;
+                            var value = field.fieldDefault.value
+                            switch (field.dataType) {
+                                case "Boolean":
+                                    value = (value === 'true');
+                                    break;
+                            }
+                            row.data[field.name] = value;
                             break;
+                        default:
+                            console.error("Failed to match fieldDefault.type on ", field);
                     }
-                    $log.debug('defaulted ' + field.name + ' to ' + row.data[field.name]);
+                    $log.debug('defaulted ' + field.name + ' to ' + row.data[field.name] + ' of type ' + typeof row.data[field.name]);
                 }
 
                 if (row.id === null) {
                     $log.debug('id is null, so assume record is newly inserted', row);
                     newInstance.state = 'INSERTED';
                     newInstance.id = GUID();
-                    $log.debug('defaulting field values', model.fields);
                     _.forEach(model.fields, function (field) {
                         setFieldDefault(field, row);
                     });
@@ -1085,14 +1092,22 @@ angular.module('tantalim.common')
                         current.sets[modelName].moveNext();
                     },
                     dblclick: function (modelName, row, column) {
-                        if (event.which === MOUSE.LEFT) {
-                            current.editing = {};
-                            current.editing[modelName] = {
-                                row: row,
-                                column: column
-                            };
-                            current.focus = modelName + "_" + column + "_" + row;
+                        if (event.which !== MOUSE.LEFT) {
+                            return;
                         }
+                        var currentField = modelMap[modelName].fields[column];
+                        var currentInstance = current.sets[modelName].getInstance(row);
+                        console.info(currentInstance);
+                        console.info(currentField);
+                        if (currentInstance.state !== "INSERTED" && !currentField.updateable) {
+                            return;
+                        }
+                        current.editing = {};
+                        current.editing[modelName] = {
+                            row: row,
+                            column: column
+                        };
+                        current.focus = modelName + "_" + column + "_" + row;
                     },
                     focus: function(modelName, row, column) {
                         if (self.action.cellIsEditing(modelName, row, column)) {
@@ -1288,9 +1303,11 @@ angular.module('tantalim.common')
 
                     $http.post('/data/' + parentModelName, dto).
                         success(function (data, status) {
+                            $log.debug('Returned success');
+                            $log.debug(status);
                             if (status === 200) {
                                 if (data.error) {
-                                    success('Failed to save data ' + data.error);
+                                    success('Failed to save data ' + data.error.message);
                                 } else {
                                     rootSet.reloadFromServer(data);
                                     success('');
@@ -1304,9 +1321,9 @@ angular.module('tantalim.common')
                         error(function (data, status) {
                             if (status === 404) {
                                 success('Server not found. Check your Internet connection and try again.');
+                            } else {
+                                success('Server returned an unknown ' + status + ' error');
                             }
-                            console.error(status);
-                            console.error(data);
                         });
                 },
 
