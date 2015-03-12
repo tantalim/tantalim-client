@@ -456,7 +456,8 @@ angular.module('tantalim.desktop')
                         if (filterString.length > 0) {
                             filterString += ' AND ';
                         }
-                        filterString += fieldName + ' ' + filterComparators[fieldName] + ' ' + value;
+                        // TODO Properly escape single/double quotes
+                        filterString += fieldName + ' ' + filterComparators[fieldName] + ' "' + value + '"';
                     }
                 });
 
