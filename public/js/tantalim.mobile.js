@@ -278,8 +278,25 @@ angular.module('tantalim.common')
                         console.info("Setting ", fieldName, newValue);
                         this.update(fieldName, newValue);
                     },
+                    getValue: function (fieldName) {
+                        console.info('finding value for fieldName: ', fieldName, this.data);
+
+                        if (this.data.hasOwnProperty(fieldName)) {
+                            return this.data[fieldName];
+                        }
+
+                        if (this.nodeSet.parentInstance) {
+                            return this.nodeSet.parentInstance.getValue(fieldName);
+                        }
+
+                        // We could consider checking child models first before dying
+                        throw new Error('Cannot find field called ' + fieldName);
+                    },
                     update: function (fieldName, newValue, oldValue) {
                         var field = modelMap[nodeSet.model.modelName].fields[fieldName];
+                        if (!field) {
+                            console.error("Failed to find field named " + fieldName + " in ", modelMap[nodeSet.model.modelName].fields);
+                        }
                         if (!field.updateable) {
                             return;
                         }
@@ -312,19 +329,6 @@ angular.module('tantalim.common')
                 var newInstance = _.defaults(row, defaults);
                 newInstance.nodeSet = nodeSet;
 
-                function getFieldValue(fieldName, fromInstance) {
-                    if (!fromInstance.nodeSet.parentInstance) {
-                        $log.error('Cannot find field called ' + fieldName);
-                        return null;
-                    }
-                    // I might need to change this to hasProperty to detect nulls or empty values
-                    if (fromInstance.nodeSet.parentInstance.data[fieldName]) {
-                        return fromInstance.nodeSet.parentInstance.data[fieldName];
-                    }
-                    // Can't find field here, let's check from the parent
-                    return getFieldValue(fieldName, fromInstance.nodeSet.parentInstance);
-                }
-
                 function setFieldDefault(field, row) {
                     if (!field.fieldDefault) {
                         return;
@@ -339,7 +343,7 @@ angular.module('tantalim.common')
 
                     switch (field.fieldDefault.type) {
                         case DEFAULT_TYPE.FIELD:
-                            row.data[field.name] = getFieldValue(field.fieldDefault.value, row);
+                            row.data[field.name] = row.getValue(field.fieldDefault.value);
                             break;
                         case DEFAULT_TYPE.FXN:
                             row.data[field.name] = eval(field.fieldDefault.value);

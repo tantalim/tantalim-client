@@ -15,32 +15,38 @@ angular.module('tantalim.select', [])
                 ctrl.activeIndex = undefined;
                 ctrl.items = undefined;
 
-                var itemModel = $attrs.itemModel;
-                var itemValue = $attrs.itemValue || "value";
-                ctrl.itemValue = itemValue;
-                var instanceModel = $attrs.instanceModel;
-                var instanceKey = $attrs.instanceKey;
-                var instanceValue = $attrs.instanceValue;
-                var otherMappings = $attrs.otherMappings;
-                if (otherMappings) {
-                    otherMappings = $scope.$eval(otherMappings);
-                }
-                var itemWhere = $attrs.itemWhere;
-                if (itemWhere) {
-                    itemWhere = $scope.$eval(itemWhere);
+                var sourceModel = $attrs.sourceModel;
+                var sourceField = $attrs.sourceField;
+                ctrl.sourceField = sourceField; // Don't remember why we have to set this here.
+                var targetModel = $attrs.targetModel;
+                var targetId = $attrs.targetId;
+                var targetField = $attrs.targetField;
+                var sourceFilter = $attrs.sourceFilter;
+                var otherMappings = undefined;
+                if ($attrs.otherMappings) {
+                    console.info("Eval " + $attrs.otherMappings);
+                    otherMappings = $scope.$eval($attrs.otherMappings);
                 }
                 var refresh = $attrs.refresh;
-                ctrl.id = instanceValue;
+                ctrl.id = targetField;
 
                 var openItems = function () {
                     ctrl.open = true;
                     var items = ctrl.items;
                     ctrl.activeIndex = undefined;
+                    console.log("targetId = ", targetId);
                     var current = _getCurrent();
                     if (current) {
                         for (var i = 0; i < items.length; i++) {
-                            if (items[i].id === current.data[instanceKey]) {
-                                ctrl.activeIndex = i;
+                            var item = items[i];
+                            if (targetId) {
+                                if (item.id === current.data[targetId]) {
+                                    ctrl.activeIndex = i;
+                                }
+                            } else {
+                                if (item.data[sourceField] === current.data[targetField]) {
+                                    ctrl.activeIndex = i;
+                                }
                             }
                         }
                     }
@@ -48,67 +54,59 @@ angular.module('tantalim.select', [])
 
                 ctrl.activate = function () {
                     var _promise = undefined;
-                    if (ctrl.open) {
-                        console.info("Wondering if this ever happens anymore...")
-                        if (ctrl.loading) {
-                            // TODO consider removing this if clause promise, we dont' really use it
-                            $timeout.cancel(_promise);
-                            ctrl.loading = false;
-                        }
-                        ctrl.open = false;
-                    } else {
-                        ctrl.filter = EMPTY_SEARCH;
-                        var whereClause = _.map(itemWhere, function(whereDefinition) {
-                            // This works but is ugly. We need a simpler way to get to the data
-                            var whereValueModelName = "BuildTable";
-                            var value = ModelCursor.current.instances[whereValueModelName].data[whereDefinition.valueField];
-                            return whereDefinition.sourceField + ' ' + whereDefinition.operator + ' ' + value;
+                    ctrl.filter = EMPTY_SEARCH;
+                    if (sourceFilter) {
+                        console.info("sourceFilter = ", sourceFilter);
+                        var pat = /\${(\w+)}/gi;
+                        sourceFilter = sourceFilter.replace(pat, function(match, fieldName) {
+                            return ModelCursor.current.instances[targetModel].getValue(fieldName);
                         });
-                        if (ctrl.items === undefined) {
-                            ctrl.loading = true;
-                            if (ctrl.filter) {
-                                //whereClause.push({ctrl.filter});
-                            }
-                            _promise = PageService.readModelData(itemModel, whereClause).then(function (d) {
-                                ctrl.loading = false;
-                                if (d.status !== 200) {
-                                    // TODO Need to figure out how to bubble up these error messages to global
-                                    $scope.serverError = 'Failed to reach server. Try refreshing.';
-                                    console.error(d);
-                                    return;
-                                }
-                                if (d.data.error) {
-                                    $scope.serverError = 'Error reading data from server: ' + d.data.error;
-                                    console.error(d);
-                                    return;
-                                }
-                                ctrl.items = d.data.rows;
-                                openItems();
-                            });
-                        } else {
-                            openItems();
-                        }
-                        focus("select-search-" + ctrl.id);
                     }
+
+                    if (ctrl.items === undefined) {
+                        ctrl.loading = true;
+                        if (ctrl.filter) {
+                            //whereClause.push({ctrl.filter});
+                        }
+                        _promise = PageService.readModelData(sourceModel, sourceFilter).then(function (d) {
+                            ctrl.loading = false;
+                            if (d.status !== 200) {
+                                // TODO Need to figure out how to bubble up these error messages to global
+                                // We should probably create a global Error Message handler
+                                $scope.serverError = 'Failed to reach server. Try refreshing.';
+                                console.error('Failed to reach server. Try refreshing.');
+                                console.error(d);
+                                return;
+                            }
+                            if (d.data.error) {
+                                $scope.serverError = 'Error reading data from server: ' + d.data.error;
+                                console.error('Error reading data from server:', d.data.error);
+                                return;
+                            }
+                            ctrl.items = d.data.rows;
+                            openItems();
+                        });
+                    } else {
+                        openItems();
+                    }
+                    focus("select-search-" + ctrl.id);
                 };
                 var _getCurrent = function () {
-                    return ModelCursor.getCurrentInstance(instanceModel);
+                    return ModelCursor.getCurrentInstance(targetModel);
                 };
 
                 ctrl.choose = function (item) {
                     // TODO if current hasn't been added then add it first
-                    var current = _getCurrent().data;
-                    current[instanceValue] = item.data[itemValue];
-                    ctrl.display = current[instanceValue];
-                    if (instanceKey) {
-                        current[instanceKey] = item.id;
-                    }
+                    var current = _getCurrent();
+                    console.info("updating targetField `" + targetField + "` to " + item.data[sourceField]);
+                    current.update(targetField, item.data[sourceField]);
+                    ctrl.display = current.data[targetField];
                     if (otherMappings) {
+                        console.info("updating otherMappings ", otherMappings);
                         _.forEach(otherMappings, function (mapping) {
-                            current[mapping.target] = item.data[mapping.source];
+                            current.update(mapping.target, item.data[mapping.source]);
                         });
                     }
-                    ModelCursor.change(_getCurrent());
                     ctrl.open = false;
                     ctrl.empty = false;
                     focus("select-button-" + ctrl.id);
@@ -183,7 +181,7 @@ angular.module('tantalim.select', [])
                         ctrl.display = "";
                         ctrl.empty = true;
                     } else {
-                        ctrl.display = newValue[instanceValue];
+                        ctrl.display = newValue[targetField];
                         ctrl.empty = false;
                     }
                     ctrl.open = false;
@@ -200,7 +198,7 @@ angular.module('tantalim.select', [])
             '<input class="form-control" data-ng-show="$select.open" focus-on="select-search-{{$select.id}}" data-ng-model="$select.filter" select-keydown>' +
             '<ul class="ui-select-choices ui-select-choices-content dropdown-menu" role="menu" ng-show="$select.items.length> 0">' +
             '<li class="ui-select-choices-row" data-ng-repeat="item in $select.items | filter:$select.filter" ng-class="{active: $select.activeIndex===$index}" ng-mouseenter="$select.activeIndex = $index">' +
-            '<a href="" data-ng-click="$select.choose(item)">{{item.data[$select.itemValue]}}</a></li>' +
+            '<a href="" data-ng-click="$select.choose(item)">{{item.data[$select.sourceField]}}</a></li>' +
             '</ul>' +
             '</div>'
         };
