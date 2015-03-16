@@ -6,25 +6,14 @@ angular.module('tantalim.desktop')
     .controller('PageController',
     function ($scope, $log, $location, PageDefinition, PageService, ModelCursor, ModelSaver, PageCursor, keyboardManager, $window) {
         $scope.showLoadingScreen = true;
-        //if (PageDefinition.error) {
-        //    console.error('Error retrieving PageDefinition: ', PageDefinition.error);
-        //    $scope.serverStatus = '';
-        //    $scope.serverError = PageDefinition.error;
-        //    if (PageDefinition.message) {
-        //        $scope.serverError += ': ' + PageDefinition.message;
-        //    }
-        //    return;
-        //}
-        //if (!PageDefinition.page.model) {
-        //    $scope.serverError = PageDefinition.page.name + ' page does not have a model defined.';
-        //    return;
-        //}
+
+        var topModel = PageDefinition.page.sections[0].model;
 
         function SearchController() {
             var searchPath = '/search';
             var self = {
                 showSearch: undefined,
-                initialize: function() {
+                initialize: function () {
                     self.showSearch = $location.path() === searchPath;
                 },
                 turnSearchOn: function () {
@@ -72,7 +61,7 @@ angular.module('tantalim.desktop')
             $scope.serverStatus = 'Loading data...';
             $scope.serverError = '';
 
-            PageService.readModelData(PageDefinition.page.model.name, searchController.filter(), searchController.page())
+            PageService.readModelData(topModel.name, searchController.filter(), searchController.page())
                 .then(function (d) {
                     $scope.serverStatus = '';
                     if (d.status !== 200) {
@@ -86,7 +75,7 @@ angular.module('tantalim.desktop')
                     $scope.filterString = searchController.filter();
                     $scope.pageNumber = searchController.page();
                     searchController.maxPages = d.data.maxPages;
-                    ModelCursor.setRoot(PageDefinition.page.model, d.data.rows);
+                    ModelCursor.setRoot(topModel, d.data.rows);
 
                     $scope.ModelCursor = ModelCursor;
                     $scope.current = ModelCursor.current;
@@ -99,10 +88,12 @@ angular.module('tantalim.desktop')
         PageCursor.initialize(PageDefinition.page);
         $scope.PageCursor = PageCursor;
 
-        $scope.chooseModel = function(model) {
+        $scope.chooseModel = function (model) {
             $scope.currentModel = model;
         };
-        $scope.chooseModel(PageDefinition.page.model.name);
+
+        // Only support a single page section at the top
+        $scope.chooseModel(PageDefinition.page.sections[0].model.name);
 
         (function setupHotKeys() {
             keyboardManager.bind('up', function () {
@@ -146,7 +137,7 @@ angular.module('tantalim.desktop')
 
         })();
 
-        (function addFormMethodsToScope(){
+        (function addFormMethodsToScope() {
             $scope.refresh = function () {
                 $log.debug('refresh()');
                 if (ModelCursor.dirty() && !$scope.serverStatus) {
@@ -158,7 +149,7 @@ angular.module('tantalim.desktop')
 
             $scope.save = function () {
                 $scope.serverStatus = 'Saving...';
-                ModelSaver.save(PageDefinition.page.model, ModelCursor.root, function (error) {
+                ModelSaver.save(topModel, ModelCursor.root, function (error) {
                     $scope.serverStatus = '';
                     $scope.serverError = error;
                 });
@@ -169,7 +160,7 @@ angular.module('tantalim.desktop')
             $scope.filterValues = {};
             $scope.filterComparators = {};
 
-            angular.forEach(PageDefinition.page.model.fields, function (field) {
+            angular.forEach(topModel.fields, function (field) {
                 $scope.filterComparators[field.name] = 'Contains';
             });
 
@@ -210,9 +201,9 @@ angular.module('tantalim.desktop')
             $scope.filterString = '';
         })();
 
-        $scope.link = function(targetPage, filter, modelName) {
+        $scope.link = function (targetPage, filter, modelName) {
             var data = ModelCursor.current.instances[modelName];
-            _.forEach(data.data, function(value, key) {
+            _.forEach(data.data, function (value, key) {
                 filter = filter.replace('[' + key + ']', data.data[key]);
             });
             $window.location.href = '/page/' + targetPage + '/?filter=' + filter;

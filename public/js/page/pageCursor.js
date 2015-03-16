@@ -26,15 +26,16 @@ angular.module('tantalim.desktop')
                 viewMode: pageSection.viewMode
             };
             cursor.sections[pageSection.name] = self;
-
-            _.forEach(pageSection.children, function (child) {
-                new SmartSection(child);
+            _.forEach(pageSection.sections, function (section) {
+                new SmartSection(section);
             });
         };
 
         cursor.initialize = function (p) {
-            $log.debug('initializing PageCursor');
-            new SmartSection(p);
+            $log.debug('initializing PageCursor', p);
+            _.forEach(p.sections, function (section) {
+                new SmartSection(section);
+            });
         };
 
         return cursor;
