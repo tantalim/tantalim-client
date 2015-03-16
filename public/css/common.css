@@ -125,15 +125,26 @@ table.tnt-grid .tnt-grid-corner {
 table.tnt-grid tr th {
     cursor: pointer;
     background-color: #EEEEEE;
+    padding: 4px;
+}
+
+table.tnt-grid tr td {
+    padding: 4px;
+    height: 29px;
 }
 
 table.tnt-grid td.tnt-grid-left-nav {
     cursor: pointer;
     width: 3em;
     font-size: x-small;
-    text-align: right;
+    text-align: center;
     background-color: #EEEEEE;
     vertical-align: middle;
-    padding: 0px 5px 0px 0px;
+    padding: 0;
+    color: green;
+    font-weight: bold;
 }
 
+body.desktop {
+    padding-bottom: 500px;
+}
