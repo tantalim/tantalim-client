@@ -88,32 +88,42 @@ angular.module('tantalim.desktop')
         PageCursor.initialize(PageDefinition.page);
         $scope.PageCursor = PageCursor;
 
-        $scope.chooseModel = function (model) {
-            $scope.currentModel = model;
+        $scope.focusSet = function (currentSet) {
+            $scope.currentSet = currentSet;
         };
 
         // Only support a single page section at the top
-        $scope.chooseModel(PageDefinition.page.sections[0].model.name);
+        //$scope.focusSet(PageDefinition.page.sections[0].model.name);
 
         (function setupHotKeys() {
             keyboardManager.bind('up', function () {
-                if ($scope.currentModel) {
-                    $scope.action.previous($scope.currentModel);
+                if ($scope.currentSet) {
+                    $scope.currentSet.movePrevious();
+                }
+            });
+            keyboardManager.bind('tab', function () {
+                if ($scope.currentSet) {
+                    $scope.currentSet.moveNext();
+                }
+            });
+            keyboardManager.bind('enter', function () {
+                if ($scope.currentSet) {
+                    $scope.currentSet.moveNext();
                 }
             });
             keyboardManager.bind('down', function () {
-                if ($scope.currentModel) {
-                    $scope.action.next($scope.currentModel);
+                if ($scope.currentSet) {
+                    $scope.currentSet.moveNext();
                 }
             });
             keyboardManager.bind('ctrl+d', function () {
-                if ($scope.currentModel) {
-                    $scope.action.delete($scope.currentModel);
+                if ($scope.currentSet) {
+                    $scope.currentSet.delete();
                 }
             });
             keyboardManager.bind('ctrl+n', function () {
-                if ($scope.currentModel) {
-                    $scope.action.insert($scope.currentModel);
+                if ($scope.currentSet) {
+                    $scope.currentSet.insert();
                 }
             });
 
@@ -200,6 +210,17 @@ angular.module('tantalim.desktop')
 
             $scope.filterString = '';
         })();
+
+        var recursiveLevel = 0;
+        $scope.recursive = function(name) {
+            recursiveLevel++;
+            console.info(name + '=' + recursiveLevel);
+            if (recursiveLevel > 2) return null;
+            else return [recursiveLevel];
+        };
+
+        $scope.getCurrentSet = ModelCursor.getCurrentSet;
+        $scope.getCurrentInstance = ModelCursor.getCurrentInstance;
 
         $scope.link = function (targetPage, filter, modelName) {
             var data = ModelCursor.current.instances[modelName];

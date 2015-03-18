@@ -175,12 +175,14 @@ angular.module('tantalim.common')
             var current;
             var modelMap;
             var clipboard;
+            var editCell;
 
             var clear = function () {
                 rootSet = null;
-                current = {sets: {}, instances: {}, gridSelection: {}, editing: {}};
+                current = []; // {sets: {}, gridSelection: {}, editing: {}}
                 modelMap = {};
                 clipboard = {};
+                editCell = {};
             };
             clear();
 
@@ -191,39 +193,57 @@ angular.module('tantalim.common')
 
             var fillModelMap = function (model, parentName) {
                 modelMap[model.name] = model;
-                model.parent = parentName; //
+                model.parent = parentName;
                 _.forEach(model.children, function (childModel) {
                     fillModelMap(childModel, model.name);
                 });
             };
 
-            var resetCurrents = function (value, modelName) {
+            var getCurrentSet = function (modelName, level) {
+                level = level || 0;
+                if (!current[level]) {
+                    current[level] = {};
+                }
+                var currentLevel = current[level];
+                if (currentLevel[modelName] === undefined && modelMap[modelName]) {
+                    $log.debug('current set for %s hasn\'t been created yet, creating now.', modelName);
+                    var parentName = modelMap[modelName].parent;
+                    // TODO fix this part here
+                    var parentInstance = currentLevel.instances[parentName];
+                    parentInstance.addChildModel(modelName);
+                    resetCurrents(self.root);
+                }
+                return currentLevel[modelName];
+            };
+
+            var resetCurrents = function (value, modelName, level) {
                 if (!modelName && value) {
                     modelName = value.model.modelName;
                 }
+                level = level || 0;
+                if (!current[level]) {
+                    current[level] = {};
+                }
+                var currentLevel = current[level];
+
                 var thisModel = modelMap[modelName];
 
-                current.sets[modelName] = value;
-
-                var nextInstance = null;
-                if (value) {
-                    nextInstance = value.getInstance();
+                currentLevel[modelName] = value;
+                // Remove all levels child "higher" than this one
+                for(var i = current.length; i > level; i--) {
+                    delete current[i];
                 }
-                current.instances[modelName] = nextInstance;
+
+                var nextInstance = value.getInstance();
 
                 if (thisModel && thisModel.children) {
-
-                    var getNextSet = function (modelName) {
-                        if (nextInstance && nextInstance.childModels) {
-                            return nextInstance.childModels[modelName];
-                        }
-                        return null;
-                    };
-
                     _.forEach(thisModel.children, function (childModel) {
-                        var childModelName = childModel.name;
-                        var childSet = getNextSet(childModelName);
-                        resetCurrents(childSet, childModelName);
+                        if (nextInstance && nextInstance.childModels) {
+                            var childSet = nextInstance.childModels[modelName];
+                            if (childSet) {
+                                resetCurrents(childSet, childModel.name, level + 1);
+                            }
+                        }
                     });
                 }
             };
@@ -373,7 +393,7 @@ angular.module('tantalim.common')
                 }
 
                 newInstance.addChildModel = function (childModelName, childDataSet) {
-                    var smartSet = new SmartNodeSet(modelMap[childModelName], childDataSet, newInstance);
+                    var smartSet = new SmartNodeSet(modelMap[childModelName], childDataSet, newInstance, nodeSet.depth + 1);
                     newInstance.childModels[childModelName] = smartSet;
                 };
 
@@ -393,8 +413,8 @@ angular.module('tantalim.common')
              * @param data
              * @param parentInstance
              */
-            var SmartNodeSet = function (model, data, parentInstance) {
-                $log.debug('Adding SmartNodeSet for ' + model.name);
+            var SmartNodeSet = function (model, data, parentInstance, depth) {
+                $log.debug('Adding SmartNodeSet for ' + model.name + ' at depth ' + depth);
                 //console.debug(model);
                 var defaults = {
                     _type: 'SmartNodeSet',
@@ -425,7 +445,8 @@ angular.module('tantalim.common')
                         instance: null,
                         model: null
                     },
-                    currentIndex: -1,
+                    selectedRows: {},
+                    selectedColumns: {},
                     /**
                      * Array of SmartNodeInstances
                      */
@@ -434,6 +455,7 @@ angular.module('tantalim.common')
                      * Array of SmartNodeInstances
                      */
                     deleted: [],
+                    depth: depth || 0,
 
                     sort: function (reverse) {
                         var orderBy = this.model.orderBy;
@@ -452,25 +474,124 @@ angular.module('tantalim.common')
                         if (index >= this.rows.length) {
                             return;
                         }
-                        this.currentIndex = index;
+                        this.selectedRows.start = index;
+                        this.selectedRows.end = index;
                         resetCurrents(this);
                     },
                     moveNext: function () {
-                        this.moveTo(this.currentIndex + 1);
+                        this.moveTo(this.selectedRows.start + 1);
                     },
                     movePrevious: function () {
-                        this.moveTo(this.currentIndex - 1);
-                    },
-                    moveToTop: function () {
-                        this.moveTo(0);
+                        this.moveTo(this.selectedRows.start - 1);
                     },
                     moveToBottom: function () {
                         this.moveTo(this.rows.length - 1);
+                    },
+                    mousedown: function (row, column) {
+                        if (event.which === MOUSE.LEFT) {
+                            if (this.cellIsEditing(row, column)) {
+                                return;
+                            } else {
+                                editCell = {};
+                            }
+                            this.selectedRows = {
+                                selecting: true,
+                                start: row,
+                                end: row
+                            };
+                            this.selectedColumns = {};
+                            this.mouseover(row, column);
+                        }
+                    },
+                    mouseover: function (row, column) {
+                        if (event.which === MOUSE.LEFT) {
+                            if (this.cellIsEditing(row, column)) {
+                                return;
+                            }
+                            if (this.selectedRows.selecting) {
+                                this.selectedRows.end = row;
+                                this.selectedColumns[column] = true;
+                                event.preventDefault();
+                                event.stopPropagation();
+                            }
+                        }
+                    },
+                    mouseup: function () {
+                        if (event.which === MOUSE.LEFT) {
+                            this.selectedRows.selecting = false;
+                            this.fixSelectedRows();
+                        }
+                    },
+                    dblclick: function (row, column) {
+                        if (event.which !== MOUSE.LEFT) {
+                            return;
+                        }
+                        var currentField = modelMap[this.model.modelName].fields[column];
+                        var currentInstance = this.getInstance(row);
+                        if (currentInstance.state !== "INSERTED" && !currentField.updateable) {
+                            return;
+                        }
+                        editCell = {
+                            model: this.model.modelName,
+                            level: this.depth,
+                            row: row,
+                            column: column
+                        };
+                        //currentFocus = this.model.modelName + "_" + this.depth + "_" + column + "_" + row;
+                    },
+                    cellIsSelected: function (row, column) {
+                        var start = this.selectedRows.start;
+                        var end = this.selectedRows.end;
+                        if (start > end) {
+                            start = end;
+                            end = this.selectedRows.start;
+                        }
+
+                        return start <= row
+                            && end >= row
+                            && this.selectedColumns[column] // get all columns in between
+                            ;
+                    },
+                    cellIsEditing: function (row, column) {
+                        return editCell.model === this.model.modelName
+                            && editCell.level === this.depth
+                            && this.selectedRows.start === row
+                            && editCell.column === column;
+                    },
+                    focus: function(row, column) {
+                        if (this.cellIsEditing(row, column)) {
+                            return true;
+                            //return currentFocus === this.model.modelName + "_" + this.depth + "_" + column + "_" + row;
+                        }
+                        return false;
                     },
                     findIndex: function (id) {
                         return _.findIndex(this.rows, function (row) {
                             return row.id === id;
                         });
+                    },
+                    fixSelectedRows: function() {
+                        function variableBetween(current, low, high) {
+                            if (current === undefined) return low;
+                            if (current < low) return low;
+                            if (current > high) return high;
+                            return current;
+                        }
+
+                        if (this.rows.length === 0) {
+                            this.selectedRows = {start: -1, end: -1};
+                        } else {
+                            var maxEnd = this.rows.length - 1;
+                            this.selectedRows.start = variableBetween(this.selectedRows.start, 0, maxEnd);
+                            this.selectedRows.end = variableBetween(this.selectedRows.end, 0, maxEnd);
+                            if (this.selectedRows.end < this.selectedRows.start) {
+                                // Swap start and end since end should always be >= start
+                                var temp = this.selectedRows.end;
+                                this.selectedRows.end = this.selectedRows.start;
+                                this.selectedRows.start = temp;
+                            }
+                        }
+                        resetCurrents(this);
                     },
                     isDirty: function() {
                         if (this.deleted && this.deleted.length > 0) return true;
@@ -480,32 +601,29 @@ angular.module('tantalim.common')
                         });
                         return !_.isEmpty(dirtyRow);
                     },
-                    delete: function (index) {
+                    delete: function () {
                         if (this.rows.length <= 0) {
                             return;
                         }
-                        var rowID = this.getInstance(index).id;
-                        var removed = _.remove(this.rows, function (row) {
-                            return row.id === rowID;
-                        });
 
-                        removed = _.remove(removed, function (row) {
-                            // Don't bother deleting newly inserted records
-                            return row.state !== 'INSERTED';
-                        });
+                        for (var index = this.selectedRows.start; index <= this.selectedRows.end; index++) {
+                            var row = this.rows[index];
+                            if (row.state !== 'INSERTED') {
+                                // Only delete previously saved records
+                                this.deleted.push(row);
+                                row.updateParent();
+                            }
+                        }
+                        this.rows.splice(this.selectedRows.start, 1 + this.selectedRows.end - this.selectedRows.start);
 
-                        if (removed && removed.length > 0) {
-                            removed[0].updateParent();
-                            this.deleted.push(removed[0]);
-                        }
-                        if (this.currentIndex >= this.rows.length) {
-                            this.currentIndex = this.rows.length - 1;
-                        }
-                        resetCurrents(this);
+                        this.fixSelectedRows();
+                    },
+                    deleteEnabled: function() {
+                        return this.getInstance() !== null;
                     },
                     getInstance: function (index) {
                         if (!index) {
-                            index = this.currentIndex;
+                            index = this.selectedRows.start;
                         }
                         if (!index || index < 0) {
                             index = 0;
@@ -573,9 +691,7 @@ angular.module('tantalim.common')
                         var smartInstance = new SmartNodeInstance(model, row, newSet);
                         newSet.rows.push(smartInstance);
                     });
-                    if (newSet.rows.length) {
-                        newSet.currentIndex = 0;
-                    }
+                    newSet.fixSelectedRows();
                 }
 
                 return newSet;
@@ -586,8 +702,8 @@ angular.module('tantalim.common')
                 current: current,
                 setRoot: function (model, data) {
                     $log.debug('Setting Root data');
-                    //$log.debug(model);
-                    //$log.debug(data);
+                    $log.debug(model);
+                    $log.debug(data);
                     clear();
                     if (_.isEmpty(model)) {
                         console.warn("setRoot called with empty model, exiting");
@@ -600,19 +716,8 @@ angular.module('tantalim.common')
                     self.current = current;
                     //console.log('setRoot done: current=', current);
                 },
-                getCurrentInstance: function (modelName) {
-                    return current.instances[modelName];
-                },
-                getCurrentSet: function (modelName) {
-                    if (current.sets[modelName] === undefined) {
-                        $log.debug('current set for %s hasn\'t been created yet, creating now.', modelName);
-                        var parentName = modelMap[modelName].parent;
-                        var parentInstance = current.instances[parentName];
-                        parentInstance.addChildModel(modelName);
-                        resetCurrents(self.root);
-                    }
-                    return current.sets[modelName];
-                },
+                getCurrentSet: getCurrentSet,
+                editCell: function() { return editCell },
                 dirty: function () {
                     return rootSet.isDirty();
                 },
@@ -622,126 +727,8 @@ angular.module('tantalim.common')
                     console.log('ModelCursor.current', self.current);
                 },
                 action: {
-                    length: function (modelName) {
-                        if (_.isEmpty(current.sets[modelName])) {
-                            return 0;
-                        }
-                        return current.sets[modelName].rows.length;
-                    },
-                    insert: function (modelName) {
-                        var newInstance = self.getCurrentSet(modelName).insert();
-                        return newInstance;
-                    },
-                    delete: function (modelName, index) {
-                        current.sets[modelName].delete(index);
-                    },
-                    deleteSelected: function (modelName) {
-                        if (current.gridSelection.model === modelName) {
-                            for (var row = current.gridSelection.rows.start; row <= current.gridSelection.rows.end; row++) {
-                                current.sets[modelName].delete(current.gridSelection.rows.start);
-                            }
-                            if (current.sets[modelName].rows.length > 0) {
-                                current.gridSelection.rows.end = current.gridSelection.rows.start;
-                            } else {
-                                current.gridSelection = {};
-                            }
-                        }
-                    },
-                    deleteEnabled: function (modelName) {
-                        return current.instances[modelName] !== null;
-                    },
-                    choose: function (modelName, id) {
-                        var index = current.sets[modelName].findIndex(id);
-                        current.sets[modelName].moveTo(index);
-                    },
-                    select: function (modelName, index) {
-                        current.sets[modelName].moveTo(index);
-                    },
-                    previous: function (modelName) {
-                        current.sets[modelName].movePrevious();
-                    },
-                    next: function (modelName) {
-                        current.sets[modelName].moveNext();
-                    },
-                    dblclick: function (modelName, row, column) {
-                        if (event.which !== MOUSE.LEFT) {
-                            return;
-                        }
-                        var currentField = modelMap[modelName].fields[column];
-                        var currentInstance = current.sets[modelName].getInstance(row);
-                        console.info(currentInstance);
-                        console.info(currentField);
-                        if (currentInstance.state !== "INSERTED" && !currentField.updateable) {
-                            return;
-                        }
-                        current.editing = {};
-                        current.editing[modelName] = {
-                            row: row,
-                            column: column
-                        };
-                        current.focus = modelName + "_" + column + "_" + row;
-                    },
-                    focus: function(modelName, row, column) {
-                        if (self.action.cellIsEditing(modelName, row, column)) {
-                            return current.focus === modelName + "_" + column + "_" + row;
-                        }
-                        return false;
-                    },
-                    cellIsEditing: function (modelName, row, column) {
-                        //return true;
-                        return current.editing[modelName]
-                            && current.editing[modelName].row === row
-                            && current.editing[modelName].column === column;
-                    },
                     escape: function () {
-                        current.editing = {};
-                    },
-                    mousedown: function (modelName, row, column) {
-                        if (event.which === MOUSE.LEFT) {
-                            if (self.action.cellIsEditing(modelName, row, column)) {
-                                return;
-                            } else {
-                                current.editing = {};
-                            }
-                            current.gridSelection = {
-                                selecting: true,
-                                model: modelName,
-                                rows: {
-                                    start: row,
-                                    end: row
-                                },
-                                columns: {}
-                            };
-                            self.action.mouseover(modelName, row, column);
-                            self.action.select(modelName, row);
-                        }
-                    },
-                    mouseover: function (modelName, row, column) {
-                        if (event.which === MOUSE.LEFT) {
-                            if (self.action.cellIsEditing(modelName, row, column)) {
-                                return;
-                            }
-                            if (current.gridSelection.selecting) {
-                                if (modelName === current.gridSelection.model) {
-                                    current.gridSelection.rows.end = row;
-                                    current.gridSelection.columns[column] = true;
-                                }
-                                event.preventDefault();
-                                event.stopPropagation();
-                            }
-                        }
-                    },
-                    mouseup: function (modelName, row, column) {
-                        if (event.which === MOUSE.LEFT) {
-                            current.gridSelection.selecting = false;
-                        }
-                    },
-                    cellIsSelected: function (modelName, row, column) {
-                        return current.gridSelection.model === modelName
-                            && current.gridSelection.rows.start <= row
-                            && current.gridSelection.rows.end >= row
-                            && current.gridSelection.columns[column]
-                            ;
+                        editCell = {};
                     },
                     copy: function () {
                         if (current.gridSelection) {
@@ -771,7 +758,7 @@ angular.module('tantalim.common')
                 var copyStart = clipboard.rows.start;
                 var copyEnd = 1 + clipboard.rows.end;
                 if (minRows > copyEnd - copyStart) copyEnd = copyStart + minRows;
-                var from = current.sets[clipboard.model].rows;
+                var from = getCurrentSet(clipboard.model, level).rows;
                 return _.slice(from, copyStart, copyEnd);
             }
 
