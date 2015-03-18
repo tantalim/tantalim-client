@@ -467,6 +467,9 @@ angular.module('tantalim.common')
                         }
                         return this.rows[index];
                     },
+                    getSelectedRows: function () {
+                        return _.slice(this.rows, this.selectedRows.start, this.selectedRows.end);
+                    },
                     reloadFromServer: function (newData) {
                         $log.debug('reloadFromServer');
                         $log.debug(newData);
@@ -553,6 +556,7 @@ angular.module('tantalim.common')
                 getCurrentSet: getCurrentSet,
                 editCell: function() { return editCell },
                 dirty: function () {
+                    if (!rootSet) return false;
                     return rootSet.isDirty();
                 },
                 toConsole: function () {

@@ -261,8 +261,11 @@ angular.module('tantalim.desktop')
 
 angular.module('tantalim.desktop')
     .controller('PageController',
-    function ($scope, $log, $location, PageDefinition, PageService, ModelCursor, ModelSaver, PageCursor, keyboardManager, $window) {
+    function ($scope, $log, $location, PageDefinition, PageService, ModelCursor, ModelSaver, PageCursor, $window, Logger) {
         $scope.showLoadingScreen = true;
+        $scope.serverStatus = Logger.getStatus();
+        $scope.serverError = Logger.getError();
+        $scope.Logger = Logger;
 
         var topModel = PageDefinition.page.sections[0].model;
 
@@ -314,111 +317,52 @@ angular.module('tantalim.desktop')
         $scope.searchController = searchController;
 
         function loadData() {
-            $log.info('loadData()');
-            $scope.serverStatus = 'Loading data...';
-            $scope.serverError = '';
+            Logger.info('Loading data...');
+            Logger.error('');
 
             PageService.readModelData(topModel.name, searchController.filter(), searchController.page())
                 .then(function (d) {
-                    $scope.serverStatus = '';
+                    Logger.info('');
                     if (d.status !== 200) {
-                        $scope.serverError = 'Failed to reach server. Try refreshing.';
+                        Logger.error('Failed to reach server. Try refreshing.');
+                        $scope.loadingFailed = true;
                         return;
                     }
                     if (d.data.error) {
-                        $scope.serverError = 'Error reading data from server: ' + d.data.error.message;
+                        Logger.error('Error reading data from server: ' + d.data.error.message);
+                        $scope.loadingFailed = true;
                         return;
                     }
                     $scope.filterString = searchController.filter();
                     $scope.pageNumber = searchController.page();
                     searchController.maxPages = d.data.maxPages;
                     ModelCursor.setRoot(topModel, d.data.rows);
+                    PageCursor.initialize(PageDefinition.page, d.data.rows);
+                    $scope.PageCursor = PageCursor;
 
-                    $scope.ModelCursor = ModelCursor;
-                    $scope.current = ModelCursor.current;
-                    $scope.action = ModelCursor.action;
+                    // Only support a single page section at the top
+                    //$scope.focusSet(PageDefinition.page.sections[0].model.name);
+
                     searchController.turnSearchOff();
                     $scope.showLoadingScreen = false;
                 });
         }
 
-        PageCursor.initialize(PageDefinition.page);
-        $scope.PageCursor = PageCursor;
-
-        $scope.focusSet = function (currentSet) {
-            $scope.currentSet = currentSet;
-        };
-
-        // Only support a single page section at the top
-        //$scope.focusSet(PageDefinition.page.sections[0].model.name);
-
-        (function setupHotKeys() {
-            keyboardManager.bind('up', function () {
-                if ($scope.currentSet) {
-                    $scope.currentSet.movePrevious();
-                }
-            });
-            keyboardManager.bind('tab', function () {
-                if ($scope.currentSet) {
-                    $scope.currentSet.moveNext();
-                }
-            });
-            keyboardManager.bind('enter', function () {
-                if ($scope.currentSet) {
-                    $scope.currentSet.moveNext();
-                }
-            });
-            keyboardManager.bind('down', function () {
-                if ($scope.currentSet) {
-                    $scope.currentSet.moveNext();
-                }
-            });
-            keyboardManager.bind('ctrl+d', function () {
-                if ($scope.currentSet) {
-                    $scope.currentSet.delete();
-                }
-            });
-            keyboardManager.bind('ctrl+n', function () {
-                if ($scope.currentSet) {
-                    $scope.currentSet.insert();
-                }
-            });
-
-            keyboardManager.bind('ctrl+s', function () {
-                $scope.save();
-            });
-            keyboardManager.bind('meta+s', function () {
-                $scope.save();
-            });
-            keyboardManager.bind('meta+c', function () {
-                $scope.action.copy();
-            });
-            keyboardManager.bind('meta+v', function () {
-                $scope.action.paste();
-            });
-            keyboardManager.bind('ctrl+shift+d', function () {
-                console.log('DEBUGGING');
-                ModelCursor.toConsole();
-                PageCursor.toConsole();
-            });
-
-        })();
-
         (function addFormMethodsToScope() {
             $scope.refresh = function () {
                 $log.debug('refresh()');
-                if (ModelCursor.dirty() && !$scope.serverStatus) {
-                    $scope.serverStatus = 'There are unsaved changes. Click [Refresh] again to discard those changes.';
+                if (ModelCursor.dirty() && !Logger.getStatus()) {
+                    Logger.info('There are unsaved changes. Click [Refresh] again to discard those changes.');
                     return;
                 }
                 loadData();
             };
 
             $scope.save = function () {
-                $scope.serverStatus = 'Saving...';
+                Logger.info('Saving...');
                 ModelSaver.save(topModel, ModelCursor.root, function (error) {
-                    $scope.serverStatus = '';
-                    $scope.serverError = error;
+                    Logger.info('');
+                    Logger.error(error);
                 });
             };
         })();
@@ -477,10 +421,9 @@ angular.module('tantalim.desktop')
         };
 
         $scope.getCurrentSet = ModelCursor.getCurrentSet;
-        $scope.getCurrentInstance = ModelCursor.getCurrentInstance;
 
         $scope.link = function (targetPage, filter, modelName) {
-            var data = ModelCursor.current.instances[modelName];
+            var data = ModelCursor.getCurrentSet(modelName, 0).getSelectedRows();
             _.forEach(data.data, function (value, key) {
                 filter = filter.replace('[' + key + ']', data.data[key]);
             });
@@ -508,7 +451,7 @@ angular.module('tantalim.desktop')
 /* global _ */
 
 angular.module('tantalim.desktop')
-    .factory('PageCursor', function ($log) {
+    .factory('PageCursor', function ($log, ModelCursor, keyboardManager) {
         $log.debug('Starting PageCursor');
 
         var cursor = {
@@ -519,21 +462,53 @@ angular.module('tantalim.desktop')
             /**
              * A list of each section on the page
              */
-            sections: {},
-            toConsole: function() {
+            sections: [],
+            getSection: function (sectionName, level) {
+                if (!cursor.sections[level] || !cursor.sections[level][sectionName]) {
+                    $log.info('cursor.sections[level][sectionName] has not been created yet');
+                    return;
+                }
+                return cursor.sections[level][sectionName];
+            },
+            toConsole: function () {
                 console.log('PageCursor.current', cursor.current);
                 console.log('PageCursor.sections', cursor.sections);
             }
         };
 
-        var SmartSection = function (pageSection) {
+        var VIEWMODE = {FORM: "form", TABLE: "table"};
+
+        var SmartSection = function (pageSection, level) {
             var self = {
                 name: pageSection.name,
-                viewMode: pageSection.viewMode
+                viewMode: pageSection.viewMode,
+                model: pageSection.model,
+                fields: pageSection.fields,
+                toggleViewMode: function () {
+                    if (self.viewMode === VIEWMODE.FORM) {
+                        self.viewMode = VIEWMODE.TABLE;
+                    } else {
+                        var currentSet = self.getCurrentSet();
+                        currentSet.selectedRows.end = currentSet.selectedRows.start;
+                        self.viewMode = VIEWMODE.FORM;
+                    }
+                },
+                focus: function() {
+                    cursor.current = self;
+                },
+                level: level || 0,
+                getCurrentSet: function () {
+                    return ModelCursor.getCurrentSet(self.model.name, self.level);
+                }
             };
-            cursor.sections[pageSection.name] = self;
+
+            if (!cursor.sections[self.level]) {
+                cursor.sections[self.level] = {};
+            }
+            cursor.sections[self.level][pageSection.name] = self;
             _.forEach(pageSection.sections, function (section) {
-                new SmartSection(section);
+                // Maybe we should only increase level if the lower section has it's own model
+                new SmartSection(section, self.level + 1);
             });
         };
 
@@ -543,6 +518,62 @@ angular.module('tantalim.desktop')
                 new SmartSection(section);
             });
         };
+
+
+        function setupHotKeys() {
+            keyboardManager.bind('up', function () {
+                if ($scope.currentSet) {
+                    $scope.currentSet.movePrevious();
+                }
+            });
+            keyboardManager.bind('tab', function () {
+                if ($scope.currentSet) {
+
+                    //PageCursor
+                    $scope.currentSet.moveNext();
+                }
+            });
+            keyboardManager.bind('enter', function () {
+                if ($scope.currentSet) {
+                    $scope.currentSet.moveNext();
+                }
+            });
+            keyboardManager.bind('down', function () {
+                if ($scope.currentSet) {
+                    $scope.currentSet.moveNext();
+                }
+            });
+            keyboardManager.bind('ctrl+d', function () {
+                if ($scope.currentSet) {
+                    $scope.currentSet.delete();
+                }
+            });
+            keyboardManager.bind('ctrl+n', function () {
+                if ($scope.currentSet) {
+                    $scope.currentSet.insert();
+                }
+            });
+
+            keyboardManager.bind('ctrl+s', function () {
+                $scope.save();
+            });
+            keyboardManager.bind('meta+s', function () {
+                $scope.save();
+            });
+            keyboardManager.bind('meta+c', function () {
+                $scope.action.copy();
+            });
+            keyboardManager.bind('meta+v', function () {
+                $scope.action.paste();
+            });
+            keyboardManager.bind('ctrl+shift+d', function () {
+                console.log('DEBUGGING');
+                ModelCursor.toConsole();
+                PageCursor.toConsole();
+            });
+
+        }
+
 
         return cursor;
     }
@@ -587,26 +618,59 @@ angular.module('tantalim.common')
 
 // Source: public/js/common/logger.js
 /**
- * Logger.log(Message({});
+ * Logger.error("Error here");
+ * Logger.log({
+ *  message: "Or like this",
+ *  type: Logger.TYPE.WARN,
+ *  source: 'ModelCursor.js Line 123',
+ *  details: 'Should fix it here.'
+ * });
  */
 angular.module('tantalim.common')
     .factory('Logger', [
         function () {
-            var messages = [];
 
             var _self = {
-                Message: function (content) {
-                    var defaults = {
+                TYPE: {INFO: 'info', WARN: 'warn', ERROR: 'warn', DEBUG: 'debug'},
+                history: [],
+                log: function (content, messageType) {
+                    content = normalizeContent(content);
+                    content.type = messageType || _self.TYPE.INFO;
 
-                    };
+                    if (content.type === _self.TYPE.ERROR) {
+                        _self._error = content.message
+                    } else {
+                        _self._status = content.message
+                    }
 
-                    // merge content and defaults
-                    return this;
+                    _self.history.push(content);
                 },
-                log: function (message) {
-                    messages.push(message);
+                info: function (content) {
+                    _self.log(content);
+                },
+                warn: function (content) {
+                    _self.log(content, _self.TYPE.WARN);
+                },
+                debug: function (content) {
+                    _self.log(content, _self.TYPE.DEBUG);
+                },
+                error: function (content) {
+                    _self.log(content, _self.TYPE.ERROR);
+                },
+                getStatus: function (status) {
+                    return _self._status;
+                },
+                getError: function () {
+                    return _self._error;
                 }
             };
+
+            function normalizeContent(content) {
+                if (typeof content === 'string') {
+                    return {message: content};
+                } else return content;
+            }
+
             return _self;
         }
     ]);
@@ -1079,6 +1143,9 @@ angular.module('tantalim.common')
                         }
                         return this.rows[index];
                     },
+                    getSelectedRows: function () {
+                        return _.slice(this.rows, this.selectedRows.start, this.selectedRows.end);
+                    },
                     reloadFromServer: function (newData) {
                         $log.debug('reloadFromServer');
                         $log.debug(newData);
@@ -1165,6 +1232,7 @@ angular.module('tantalim.common')
                 getCurrentSet: getCurrentSet,
                 editCell: function() { return editCell },
                 dirty: function () {
+                    if (!rootSet) return false;
                     return rootSet.isDirty();
                 },
                 toConsole: function () {
