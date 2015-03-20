@@ -40,42 +40,50 @@ angular.module('tantalim.common')
                 }
                 var currentLevel = current[level];
                 if (currentLevel[modelName] === undefined && modelMap[modelName]) {
-                    $log.debug('current set for %s hasn\'t been created yet, creating now.', modelName);
-                    var parentName = modelMap[modelName].parent;
-                    // TODO fix this part here
-                    var parentInstance = currentLevel.instances[parentName];
-                    parentInstance.addChildModel(modelName);
-                    resetCurrents(self.root);
+                    return undefined;
                 }
                 return currentLevel[modelName];
             };
 
-            var resetCurrents = function (value, modelName, level) {
-                if (!modelName && value) {
-                    modelName = value.model.modelName;
+            var getOrAddCurrentSet = function(modelName, level) {
+                var currentSet = getCurrentSet(modelName, level);
+                if (currentSet) return currentSet;
+
+                $log.warn('current set for %s hasn\'t been created yet, creating now.', modelName, current);
+                // TODO fix this part here
+                var parentInstance = currentLevel.instances[parentName];
+                parentInstance.addChildModel(modelName);
+                resetCurrents(self.root);
+            };
+
+            var resetCurrents = function (thisSet) {
+                if (!thisSet || thisSet._type !== 'SmartNodeSet') {
+                    throw new Error('resetCurrents() requires a SmartNodeSet but got', thisSet);
                 }
-                level = level || 0;
+
+                var modelName = thisSet.model.modelName;
+                var level = thisSet.depth;
                 if (!current[level]) {
                     current[level] = {};
                 }
-                var currentLevel = current[level];
 
                 var thisModel = modelMap[modelName];
 
-                currentLevel[modelName] = value;
-                // Remove all levels child "higher" than this one
-                for(var i = current.length; i > level; i--) {
+                current[level][modelName] = thisSet;
+                // Remove all child levels below than this one
+                for(var i = level + 1; i < current.length; i++) {
                     delete current[i];
                 }
 
-                var nextInstance = value.getInstance();
+                var nextInstance = thisSet.getInstance();
 
                 if (thisModel && thisModel.children) {
                     _.forEach(thisModel.children, function (childModel) {
                         if (nextInstance && nextInstance.childModels) {
-                            var childSet = nextInstance.childModels[modelName];
+                            var childSet = nextInstance.childModels[childModel.name];
                             if (childSet) {
-                                resetCurrents(childSet, childModel.name, level + 1);
+                                console.info("adding child set ", childModel.name);
+                                resetCurrents(childSet);
                             }
                         }
                     });
@@ -89,7 +97,7 @@ angular.module('tantalim.common')
              * @param nodeSet
              */
             var SmartNodeInstance = function (model, row, nodeSet) {
-                $log.debug('Adding SmartNodeInstance id:%s for model `%s` onto set ', row.id, model.name, nodeSet);
+                //$log.debug('Adding SmartNodeInstance id:%s for model `%s` onto set ', row.id, model.name, nodeSet);
                 var defaults = {
                     _type: 'SmartNodeInstance',
                     /**
@@ -146,7 +154,7 @@ angular.module('tantalim.common')
                         // We could consider checking child models first before dying
                         throw new Error('Cannot find field called ' + fieldName);
                     },
-                    update: function (fieldName, newValue, oldValue) {
+                    update: function (fieldName, newValue) {
                         var field = modelMap[nodeSet.model.modelName].fields[fieldName];
                         if (!field) {
                             console.error("Failed to find field named " + fieldName + " in ", modelMap[nodeSet.model.modelName].fields);
@@ -246,10 +254,10 @@ angular.module('tantalim.common')
              * @param model
              * @param data
              * @param parentInstance
+             * @param depth
              */
             var SmartNodeSet = function (model, data, parentInstance, depth) {
-                $log.debug('Adding SmartNodeSet for ' + model.name + ' at depth ' + depth);
-                //console.debug(model);
+                //$log.debug('Adding SmartNodeSet for ' + model.name + ' at depth ' + depth);
                 var defaults = {
                     _type: 'SmartNodeSet',
                     model: {
@@ -456,14 +464,14 @@ angular.module('tantalim.common')
                         return this.getInstance() !== null;
                     },
                     getInstance: function (index) {
+                        if (!this.rows || this.rows.length === 0) {
+                            return null;
+                        }
                         if (!index) {
                             index = this.selectedRows.start;
                         }
                         if (!index || index < 0) {
                             index = 0;
-                        }
-                        if (!this.rows || this.rows.length === 0) {
-                            return null;
                         }
                         return this.rows[index];
                     },
@@ -567,27 +575,6 @@ angular.module('tantalim.common')
                 action: {
                     escape: function () {
                         editCell = {};
-                    },
-                    copy: function () {
-                        if (current.gridSelection) {
-                            clipboard = _.cloneDeep(current.gridSelection);
-                        }
-                    },
-                    paste: function () {
-                        if (clipboard && current.gridSelection) {
-                            var fromRows = getRows(clipboard);
-                            var toRows = getRows(current.gridSelection);
-
-                            var counter = 0;
-                            _.forEach(toRows, function (targetRow) {
-                                if (counter >= fromRows.length) counter = 0;
-                                var fromRow = fromRows[counter];
-                                _.forEach(current.gridSelection.columns, function (yes, columnName) {
-                                    targetRow.update(columnName, fromRow.data[columnName]);
-                                });
-                                counter++;
-                            });
-                        }
                     }
                 }
             };

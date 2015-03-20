@@ -149,19 +149,19 @@ angular.module('tantalim.desktop')
                 var modifiers = {
                     shift: {
                         wanted: false,
-                        pressed: e.shiftKey ? true : false
+                        pressed: !!e.shiftKey
                     },
                     ctrl: {
                         wanted: false,
-                        pressed: e.ctrlKey ? true : false
+                        pressed: !!e.ctrlKey
                     },
                     alt: {
                         wanted: false,
-                        pressed: e.altKey ? true : false
+                        pressed: !!e.altKey
                     },
                     meta: { //Meta is Mac specific
                         wanted: false,
-                        pressed: e.metaKey ? true : false
+                        pressed: !!e.metaKey
                     }
                 };
                 // Foreach keys in label (split on +)
@@ -261,21 +261,115 @@ angular.module('tantalim.desktop')
 
 angular.module('tantalim.desktop')
     .controller('PageController',
-    function ($scope, $log, $location, PageDefinition, PageService, ModelCursor, ModelSaver, PageCursor, $window, Logger) {
-        $scope.showLoadingScreen = true;
-        $scope.serverStatus = Logger.getStatus();
-        $scope.serverError = Logger.getError();
-        $scope.Logger = Logger;
+    function ($scope, $log, $location, PageDefinition, PageService, ModelCursor, keyboardManager, ModelSaver, $window, Logger) {
 
-        var topModel = PageDefinition.page.sections[0].model;
-
-        function SearchController() {
+        var SmartPage = function (page) {
             var searchPath = '/search';
             var self = {
-                showSearch: undefined,
-                initialize: function () {
-                    self.showSearch = $location.path() === searchPath;
+                /**
+                 * A pointer to the currently selected section. Useful for key binding and such.
+                 */
+                current: null,
+                topSection: null,
+                /**
+                 * A list of each section on the page
+                 */
+                sections: [],
+                getSection: function (sectionName, level) {
+                    if (!self.sections[level] || !self.sections[level][sectionName]) {
+                        $log.info('self.sections[level][sectionName] has not been created yet');
+                        return;
+                    }
+                    return self.sections[level][sectionName];
                 },
+                showLoadingScreen: true,
+                loadingFailed: false,
+                loadData: function () {
+                    Logger.info('Loading data...');
+                    Logger.error('');
+
+                    var topModel = self.topSection.model;
+                    PageService.readModelData(topModel.name, self.filter(), self.page())
+                        .then(function (d) {
+                            Logger.info('');
+                            if (d.status !== 200) {
+                                Logger.error('Failed to reach server. Try refreshing.');
+                                self.loadingFailed = true;
+                                return;
+                            }
+                            if (d.data.error) {
+                                Logger.error('Error reading data from server: ' + d.data.error.message);
+                                self.loadingFailed = true;
+                                return;
+                            }
+                            //self.filterString = self.filter();
+                            //self.pageNumber = SearchController.page();
+                            self.maxPages = d.data.maxPages;
+                            ModelCursor.setRoot(topModel, d.data.rows);
+                            self.initialize(PageDefinition.page, d.data.rows);
+                            self.turnSearchOff();
+                            self.showLoadingScreen = false;
+                        });
+                },
+
+                refresh: function () {
+                    $log.debug('refresh()');
+                    if (ModelCursor.dirty() && !Logger.getStatus()) {
+                        Logger.info('There are unsaved changes. Click [Refresh] again to discard those changes.');
+                        return;
+                    }
+                    self.loadData();
+                },
+                save: function () {
+                    Logger.info('Saving...');
+                    ModelSaver.save(self.topSection.model, ModelCursor.root, function (error) {
+                        Logger.info('');
+                        Logger.error(error);
+                    });
+                },
+                focus: function (section) {
+                    console.info("focus ", section);
+                    if (self.current) self.current.unbindHotKeys();
+                    self.current = section;
+                    section.bindHotKeys();
+                },
+                bind: function () {
+                    keyboardManager.bind('ctrl+s', function () {
+                        self.save();
+                    });
+                    keyboardManager.bind('meta+s', function () {
+                        self.save();
+                    });
+                    keyboardManager.bind('ctrl+shift+d', function () {
+                        self.toConsole();
+                    });
+                },
+                toConsole: function () {
+                    console.log('SmartPage.current', self.current);
+                    console.log('SmartPage.sections', self.sections);
+                    ModelCursor.toConsole();
+                },
+                initialize: function (p, data) {
+                    $log.debug('SmartPage.initialize()', p);
+                    _.forEach(p.sections, function (section) {
+                        new SmartSection(section, 0, self.sections);
+                    });
+
+                    console.info(self.sections);
+                    self.topSection = self.sections[0][PageDefinition.page.sections[0].name];
+                    self.showSearch = $location.path() === searchPath;
+                    angular.forEach(self.topSection.fields, function (field) {
+                        self.filterComparators[field.name] = 'Contains';
+                    });
+                    self.filter();
+                    self.focus(self.topSection);
+
+                    // Not sure we need this here
+                    //page.loadData();
+                },
+                showSearch: undefined,
+                filterValues: {},
+                filterComparators: {},
                 turnSearchOn: function () {
                     $location.path(searchPath);
                     self.showSearch = true;
@@ -290,7 +384,7 @@ angular.module('tantalim.desktop')
                     }
                     return $location.search().filter;
                 },
-                maxPages: 99, // TODO get the max from server
+                maxPages: 99,
                 page: function (newPage) {
                     if (newPage) {
                         $location.search('page', newPage);
@@ -309,82 +403,107 @@ angular.module('tantalim.desktop')
                         self.page(currentPage + 1);
                     }
                 }
+
             };
+            self.initialize(page);
             return self;
-        }
+        };
 
-        var searchController = new SearchController();
-        $scope.searchController = searchController;
-
-        function loadData() {
-            Logger.info('Loading data...');
-            Logger.error('');
-
-            PageService.readModelData(topModel.name, searchController.filter(), searchController.page())
-                .then(function (d) {
-                    Logger.info('');
-                    if (d.status !== 200) {
-                        Logger.error('Failed to reach server. Try refreshing.');
-                        $scope.loadingFailed = true;
-                        return;
+        var SmartSection = function (pageSection, level, sections) {
+            $log.debug("Creating SmartSection ", pageSection);
+            var VIEWMODE = {FORM: "form", TABLE: "table"};
+            var self = {
+                name: pageSection.name,
+                viewMode: pageSection.viewMode,
+                model: pageSection.model,
+                fields: pageSection.fields,
+                toggleViewMode: function () {
+                    console.info('toggleViewMode', this);
+                    if (self.viewMode === VIEWMODE.FORM) {
+                        self.viewMode = VIEWMODE.TABLE;
+                    } else {
+                        var currentSet = self.getCurrentSet();
+                        currentSet.selectedRows.end = currentSet.selectedRows.start;
+                        self.viewMode = VIEWMODE.FORM;
                     }
-                    if (d.data.error) {
-                        Logger.error('Error reading data from server: ' + d.data.error.message);
-                        $scope.loadingFailed = true;
-                        return;
+                },
+                copy: function () {
+                    if (current.gridSelection) {
+                        clipboard = _.cloneDeep(current.gridSelection);
                     }
-                    $scope.filterString = searchController.filter();
-                    $scope.pageNumber = searchController.page();
-                    searchController.maxPages = d.data.maxPages;
-                    ModelCursor.setRoot(topModel, d.data.rows);
-                    PageCursor.initialize(PageDefinition.page, d.data.rows);
-                    $scope.PageCursor = PageCursor;
+                },
+                paste: function () {
+                    if (clipboard && current.gridSelection) {
+                        var fromRows = getRows(clipboard);
+                        var toRows = getRows(current.gridSelection);
 
-                    // Only support a single page section at the top
-                    //$scope.focusSet(PageDefinition.page.sections[0].model.name);
-
-                    searchController.turnSearchOff();
-                    $scope.showLoadingScreen = false;
-                });
-        }
-
-        (function addFormMethodsToScope() {
-            $scope.refresh = function () {
-                $log.debug('refresh()');
-                if (ModelCursor.dirty() && !Logger.getStatus()) {
-                    Logger.info('There are unsaved changes. Click [Refresh] again to discard those changes.');
-                    return;
+                        var counter = 0;
+                        _.forEach(toRows, function (targetRow) {
+                            if (counter >= fromRows.length) counter = 0;
+                            var fromRow = fromRows[counter];
+                            _.forEach(current.gridSelection.columns, function (yes, columnName) {
+                                targetRow.update(columnName, fromRow.data[columnName]);
+                            });
+                            counter++;
+                        });
+                    }
+                },
+                level: level || 0,
+                getCurrentSet: function () {
+                    return ModelCursor.getCurrentSet(self.model.name, self.level);
+                },
+                unbindHotKeys: function () {
+                    _.forEach(keyboardManager.keyboardEvent, function (key, value) {
+                        keyboardManager.unbind(value);
+                    });
+                },
+                bindHotKeys: function () {
+                    keyboardManager.bind('up', function () {
+                        self.getCurrentSet().movePrevious();
+                    });
+                    keyboardManager.bind('tab', function () {
+                        self.getCurrentSet().moveNext();
+                    });
+                    keyboardManager.bind('enter', function () {
+                        self.getCurrentSet().moveNext();
+                    });
+                    keyboardManager.bind('down', function () {
+                        self.getCurrentSet().moveNext();
+                    });
+                    keyboardManager.bind('ctrl+d', function () {
+                        self.getCurrentSet().delete();
+                    });
+                    keyboardManager.bind('ctrl+n', function () {
+                        self.getCurrentSet().insert();
+                    });
+                    keyboardManager.bind('meta+c', function () {
+                        self.copy();
+                    });
+                    keyboardManager.bind('meta+v', function () {
+                        self.paste();
+                    });
                 }
-                loadData();
             };
 
-            $scope.save = function () {
-                Logger.info('Saving...');
-                ModelSaver.save(topModel, ModelCursor.root, function (error) {
-                    Logger.info('');
-                    Logger.error(error);
-                });
-            };
-        })();
+            if (!sections[self.level]) {
+                sections[self.level] = {};
+            }
+            sections[self.level][self.name] = self;
+
+            _.forEach(pageSection.sections, function (section) {
+                // Maybe we should only increase level if the lower section has it's own model
+                new SmartSection(section, self.level + 1, sections);
+            });
+        };
+
+        /**
+         * Global clipboard
+         * @type {null}
+         */
+        var clipboard = null;
 
         (function initializeSearchPage() {
-            $scope.filterValues = {};
-            $scope.filterComparators = {};
-
-            angular.forEach(topModel.fields, function (field) {
-                $scope.filterComparators[field.name] = 'Contains';
-            });
-
-            $scope.runSearch = function () {
-                $log.debug('runSearch()');
-                if ($scope.filterString) {
-                    searchController.filter($scope.filterString);
-                } else {
-                    $location.search({});
-                }
-                loadData();
-            };
-
+            // TODO Not done yet
             $scope.$watch('filterValues', function (newVal) {
                 setFilterString(newVal, $scope.filterComparators);
             }, true);
@@ -412,16 +531,6 @@ angular.module('tantalim.desktop')
             $scope.filterString = '';
         })();
 
-        var recursiveLevel = 0;
-        $scope.recursive = function(name) {
-            recursiveLevel++;
-            console.info(name + '=' + recursiveLevel);
-            if (recursiveLevel > 2) return null;
-            else return [recursiveLevel];
-        };
-
-        $scope.getCurrentSet = ModelCursor.getCurrentSet;
-
         $scope.link = function (targetPage, filter, modelName) {
             var data = ModelCursor.getCurrentSet(modelName, 0).getSelectedRows();
             _.forEach(data.data, function (value, key) {
@@ -430,154 +539,19 @@ angular.module('tantalim.desktop')
             $window.location.href = '/page/' + targetPage + '/?filter=' + filter;
         };
 
-        function initializePage() {
-            $log.debug('initializePage()');
-            searchController.initialize();
-            if (searchController.showSearch) {
-                $scope.showLoadingScreen = false;
-            } else {
-                loadData();
-            }
-        }
-
-        // $locationChangeSuccess apparently gets called automatically, so don't initialize explicitly
-        // initializePage();
         $scope.$on('$locationChangeSuccess', function () {
-            initializePage();
+            $log.debug('$locationChangeSuccess()');
+            $scope.Logger = Logger;
+            var page = new SmartPage(PageDefinition.page);
+            $scope.SmartPage = page;
+
+            if (page.showSearch) {
+                page.showLoadingScreen = false;
+            } else {
+                page.loadData();
+            }
         });
     });
-
-// Source: public/js/page/pageCursor.js
-/* global _ */
-
-angular.module('tantalim.desktop')
-    .factory('PageCursor', function ($log, ModelCursor, keyboardManager) {
-        $log.debug('Starting PageCursor');
-
-        var cursor = {
-            /**
-             * A pointer to the currently selected section. Useful for key binding and such.
-             */
-            current: null,
-            /**
-             * A list of each section on the page
-             */
-            sections: [],
-            getSection: function (sectionName, level) {
-                if (!cursor.sections[level] || !cursor.sections[level][sectionName]) {
-                    $log.info('cursor.sections[level][sectionName] has not been created yet');
-                    return;
-                }
-                return cursor.sections[level][sectionName];
-            },
-            toConsole: function () {
-                console.log('PageCursor.current', cursor.current);
-                console.log('PageCursor.sections', cursor.sections);
-            }
-        };
-
-        var VIEWMODE = {FORM: "form", TABLE: "table"};
-
-        var SmartSection = function (pageSection, level) {
-            var self = {
-                name: pageSection.name,
-                viewMode: pageSection.viewMode,
-                model: pageSection.model,
-                fields: pageSection.fields,
-                toggleViewMode: function () {
-                    if (self.viewMode === VIEWMODE.FORM) {
-                        self.viewMode = VIEWMODE.TABLE;
-                    } else {
-                        var currentSet = self.getCurrentSet();
-                        currentSet.selectedRows.end = currentSet.selectedRows.start;
-                        self.viewMode = VIEWMODE.FORM;
-                    }
-                },
-                focus: function() {
-                    cursor.current = self;
-                },
-                level: level || 0,
-                getCurrentSet: function () {
-                    return ModelCursor.getCurrentSet(self.model.name, self.level);
-                }
-            };
-
-            if (!cursor.sections[self.level]) {
-                cursor.sections[self.level] = {};
-            }
-            cursor.sections[self.level][pageSection.name] = self;
-            _.forEach(pageSection.sections, function (section) {
-                // Maybe we should only increase level if the lower section has it's own model
-                new SmartSection(section, self.level + 1);
-            });
-        };
-
-        cursor.initialize = function (p) {
-            $log.debug('initializing PageCursor', p);
-            _.forEach(p.sections, function (section) {
-                new SmartSection(section);
-            });
-        };
-
-
-        function setupHotKeys() {
-            keyboardManager.bind('up', function () {
-                if ($scope.currentSet) {
-                    $scope.currentSet.movePrevious();
-                }
-            });
-            keyboardManager.bind('tab', function () {
-                if ($scope.currentSet) {
-
-                    //PageCursor
-                    $scope.currentSet.moveNext();
-                }
-            });
-            keyboardManager.bind('enter', function () {
-                if ($scope.currentSet) {
-                    $scope.currentSet.moveNext();
-                }
-            });
-            keyboardManager.bind('down', function () {
-                if ($scope.currentSet) {
-                    $scope.currentSet.moveNext();
-                }
-            });
-            keyboardManager.bind('ctrl+d', function () {
-                if ($scope.currentSet) {
-                    $scope.currentSet.delete();
-                }
-            });
-            keyboardManager.bind('ctrl+n', function () {
-                if ($scope.currentSet) {
-                    $scope.currentSet.insert();
-                }
-            });
-
-            keyboardManager.bind('ctrl+s', function () {
-                $scope.save();
-            });
-            keyboardManager.bind('meta+s', function () {
-                $scope.save();
-            });
-            keyboardManager.bind('meta+c', function () {
-                $scope.action.copy();
-            });
-            keyboardManager.bind('meta+v', function () {
-                $scope.action.paste();
-            });
-            keyboardManager.bind('ctrl+shift+d', function () {
-                console.log('DEBUGGING');
-                ModelCursor.toConsole();
-                PageCursor.toConsole();
-            });
-
-        }
-
-
-        return cursor;
-    }
-);
 
 // Source: public/js/common/_app.js
 /* global angular */
@@ -716,46 +690,59 @@ angular.module('tantalim.common')
                 }
                 var currentLevel = current[level];
                 if (currentLevel[modelName] === undefined && modelMap[modelName]) {
-                    $log.debug('current set for %s hasn\'t been created yet, creating now.', modelName);
-                    var parentName = modelMap[modelName].parent;
-                    // TODO fix this part here
-                    var parentInstance = currentLevel.instances[parentName];
-                    parentInstance.addChildModel(modelName);
-                    resetCurrents(self.root);
+                    return undefined;
                 }
                 return currentLevel[modelName];
             };
 
-            var resetCurrents = function (value, modelName, level) {
-                if (!modelName && value) {
-                    modelName = value.model.modelName;
+            var getOrAddCurrentSet = function(modelName, level) {
+                var currentSet = getCurrentSet(modelName, level);
+                if (currentSet) return currentSet;
+
+                $log.warn('current set for %s hasn\'t been created yet, creating now.', modelName, current);
+                // TODO fix this part here
+                var parentInstance = currentLevel.instances[parentName];
+                parentInstance.addChildModel(modelName);
+                resetCurrents(self.root);
+            };
+
+            var resetCurrents = function (thisSet) {
+                if (!thisSet || thisSet._type !== 'SmartNodeSet') {
+                    throw new Error('resetCurrents() requires a SmartNodeSet but got', thisSet);
                 }
-                level = level || 0;
+
+
+                var modelName = thisSet.model.modelName;
+                var level = thisSet.depth;
                 if (!current[level]) {
                     current[level] = {};
                 }
-                var currentLevel = current[level];
 
                 var thisModel = modelMap[modelName];
 
-                currentLevel[modelName] = value;
-                // Remove all levels child "higher" than this one
-                for(var i = current.length; i > level; i--) {
+                console.warn("Set current level ", level, modelName, thisModel);
+                current[level][modelName] = thisSet;
+                // Remove all child levels below than this one
+                for(var i = level + 1; i < current.length; i++) {
+                    console.warn('deleting levels child "higher" than this ' + level, current[i]);
                     delete current[i];
                 }
 
-                var nextInstance = value.getInstance();
+                var nextInstance = thisSet.getInstance();
+                console.warn(" Using nextInstance ", nextInstance);
 
                 if (thisModel && thisModel.children) {
                     _.forEach(thisModel.children, function (childModel) {
                         if (nextInstance && nextInstance.childModels) {
-                            var childSet = nextInstance.childModels[modelName];
+                            var childSet = nextInstance.childModels[childModel.name];
                             if (childSet) {
-                                resetCurrents(childSet, childModel.name, level + 1);
+                                console.info("adding child set ", childModel.name);
+                                resetCurrents(childSet);
                             }
                         }
                     });
                 }
+                console.warn("DONE Setting Current", current);
             };
 
             /**
@@ -765,7 +752,7 @@ angular.module('tantalim.common')
              * @param nodeSet
              */
             var SmartNodeInstance = function (model, row, nodeSet) {
-                $log.debug('Adding SmartNodeInstance id:%s for model `%s` onto set ', row.id, model.name, nodeSet);
+                //$log.debug('Adding SmartNodeInstance id:%s for model `%s` onto set ', row.id, model.name, nodeSet);
                 var defaults = {
                     _type: 'SmartNodeInstance',
                     /**
@@ -822,7 +809,7 @@ angular.module('tantalim.common')
                         // We could consider checking child models first before dying
                         throw new Error('Cannot find field called ' + fieldName);
                     },
-                    update: function (fieldName, newValue, oldValue) {
+                    update: function (fieldName, newValue) {
                         var field = modelMap[nodeSet.model.modelName].fields[fieldName];
                         if (!field) {
                             console.error("Failed to find field named " + fieldName + " in ", modelMap[nodeSet.model.modelName].fields);
@@ -922,10 +909,10 @@ angular.module('tantalim.common')
              * @param model
              * @param data
              * @param parentInstance
+             * @param depth
              */
             var SmartNodeSet = function (model, data, parentInstance, depth) {
-                $log.debug('Adding SmartNodeSet for ' + model.name + ' at depth ' + depth);
-                //console.debug(model);
+                //$log.debug('Adding SmartNodeSet for ' + model.name + ' at depth ' + depth);
                 var defaults = {
                     _type: 'SmartNodeSet',
                     model: {
@@ -986,6 +973,7 @@ angular.module('tantalim.common')
                         }
                         this.selectedRows.start = index;
                         this.selectedRows.end = index;
+                        console.info("moveTo");
                         resetCurrents(this);
                     },
                     moveNext: function () {
@@ -1101,6 +1089,7 @@ angular.module('tantalim.common')
                                 this.selectedRows.start = temp;
                             }
                         }
+                        console.info("fixSelectedRows");
                         resetCurrents(this);
                     },
                     isDirty: function() {
@@ -1132,14 +1121,14 @@ angular.module('tantalim.common')
                         return this.getInstance() !== null;
                     },
                     getInstance: function (index) {
+                        if (!this.rows || this.rows.length === 0) {
+                            return null;
+                        }
                         if (!index) {
                             index = this.selectedRows.start;
                         }
                         if (!index || index < 0) {
                             index = 0;
-                        }
-                        if (!this.rows || this.rows.length === 0) {
-                            return null;
                         }
                         return this.rows[index];
                     },
@@ -1225,6 +1214,7 @@ angular.module('tantalim.common')
                     fillModelMap(model);
                     rootSet = new SmartNodeSet(model, data);
                     self.root = rootSet;
+                    console.info("setRoot");
                     resetCurrents(rootSet);
                     self.current = current;
                     //console.log('setRoot done: current=', current);
@@ -1243,27 +1233,6 @@ angular.module('tantalim.common')
                 action: {
                     escape: function () {
                         editCell = {};
-                    },
-                    copy: function () {
-                        if (current.gridSelection) {
-                            clipboard = _.cloneDeep(current.gridSelection);
-                        }
-                    },
-                    paste: function () {
-                        if (clipboard && current.gridSelection) {
-                            var fromRows = getRows(clipboard);
-                            var toRows = getRows(current.gridSelection);
-
-                            var counter = 0;
-                            _.forEach(toRows, function (targetRow) {
-                                if (counter >= fromRows.length) counter = 0;
-                                var fromRow = fromRows[counter];
-                                _.forEach(current.gridSelection.columns, function (yes, columnName) {
-                                    targetRow.update(columnName, fromRow.data[columnName]);
-                                });
-                                counter++;
-                            });
-                        }
                     }
                 }
             };

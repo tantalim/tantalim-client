@@ -4,21 +4,115 @@
 
 angular.module('tantalim.desktop')
     .controller('PageController',
-    function ($scope, $log, $location, PageDefinition, PageService, ModelCursor, ModelSaver, PageCursor, $window, Logger) {
-        $scope.showLoadingScreen = true;
-        $scope.serverStatus = Logger.getStatus();
-        $scope.serverError = Logger.getError();
-        $scope.Logger = Logger;
+    function ($scope, $log, $location, PageDefinition, PageService, ModelCursor, keyboardManager, ModelSaver, $window, Logger) {
 
-        var topModel = PageDefinition.page.sections[0].model;
-
-        function SearchController() {
+        var SmartPage = function (page) {
             var searchPath = '/search';
             var self = {
-                showSearch: undefined,
-                initialize: function () {
-                    self.showSearch = $location.path() === searchPath;
+                /**
+                 * A pointer to the currently selected section. Useful for key binding and such.
+                 */
+                current: null,
+                topSection: null,
+                /**
+                 * A list of each section on the page
+                 */
+                sections: [],
+                getSection: function (sectionName, level) {
+                    if (!self.sections[level] || !self.sections[level][sectionName]) {
+                        $log.info('self.sections[level][sectionName] has not been created yet');
+                        return;
+                    }
+                    return self.sections[level][sectionName];
                 },
+                showLoadingScreen: true,
+                loadingFailed: false,
+                loadData: function () {
+                    Logger.info('Loading data...');
+                    Logger.error('');
+
+                    var topModel = self.topSection.model;
+                    PageService.readModelData(topModel.name, self.filter(), self.page())
+                        .then(function (d) {
+                            Logger.info('');
+                            if (d.status !== 200) {
+                                Logger.error('Failed to reach server. Try refreshing.');
+                                self.loadingFailed = true;
+                                return;
+                            }
+                            if (d.data.error) {
+                                Logger.error('Error reading data from server: ' + d.data.error.message);
+                                self.loadingFailed = true;
+                                return;
+                            }
+                            //self.filterString = self.filter();
+                            //self.pageNumber = SearchController.page();
+                            self.maxPages = d.data.maxPages;
+                            ModelCursor.setRoot(topModel, d.data.rows);
+                            self.initialize(PageDefinition.page, d.data.rows);
+                            self.turnSearchOff();
+                            self.showLoadingScreen = false;
+                        });
+                },
+
+                refresh: function () {
+                    $log.debug('refresh()');
+                    if (ModelCursor.dirty() && !Logger.getStatus()) {
+                        Logger.info('There are unsaved changes. Click [Refresh] again to discard those changes.');
+                        return;
+                    }
+                    self.loadData();
+                },
+                save: function () {
+                    Logger.info('Saving...');
+                    ModelSaver.save(self.topSection.model, ModelCursor.root, function (error) {
+                        Logger.info('');
+                        Logger.error(error);
+                    });
+                },
+                focus: function (section) {
+                    console.info("focus ", section);
+                    if (self.current) self.current.unbindHotKeys();
+                    self.current = section;
+                    section.bindHotKeys();
+                },
+                bind: function () {
+                    keyboardManager.bind('ctrl+s', function () {
+                        self.save();
+                    });
+                    keyboardManager.bind('meta+s', function () {
+                        self.save();
+                    });
+                    keyboardManager.bind('ctrl+shift+d', function () {
+                        self.toConsole();
+                    });
+                },
+                toConsole: function () {
+                    console.log('SmartPage.current', self.current);
+                    console.log('SmartPage.sections', self.sections);
+                    ModelCursor.toConsole();
+                },
+                initialize: function (p, data) {
+                    $log.debug('SmartPage.initialize()', p);
+                    _.forEach(p.sections, function (section) {
+                        new SmartSection(section, 0, self.sections);
+                    });
+
+                    console.info(self.sections);
+                    self.topSection = self.sections[0][PageDefinition.page.sections[0].name];
+                    self.showSearch = $location.path() === searchPath;
+                    angular.forEach(self.topSection.fields, function (field) {
+                        self.filterComparators[field.name] = 'Contains';
+                    });
+                    self.filter();
+                    self.focus(self.topSection);
+
+                    // Not sure we need this here
+                    //page.loadData();
+                },
+                showSearch: undefined,
+                filterValues: {},
+                filterComparators: {},
                 turnSearchOn: function () {
                     $location.path(searchPath);
                     self.showSearch = true;
@@ -33,7 +127,7 @@ angular.module('tantalim.desktop')
                     }
                     return $location.search().filter;
                 },
-                maxPages: 99, // TODO get the max from server
+                maxPages: 99,
                 page: function (newPage) {
                     if (newPage) {
                         $location.search('page', newPage);
@@ -52,82 +146,107 @@ angular.module('tantalim.desktop')
                         self.page(currentPage + 1);
                     }
                 }
+
             };
+            self.initialize(page);
             return self;
-        }
+        };
 
-        var searchController = new SearchController();
-        $scope.searchController = searchController;
-
-        function loadData() {
-            Logger.info('Loading data...');
-            Logger.error('');
-
-            PageService.readModelData(topModel.name, searchController.filter(), searchController.page())
-                .then(function (d) {
-                    Logger.info('');
-                    if (d.status !== 200) {
-                        Logger.error('Failed to reach server. Try refreshing.');
-                        $scope.loadingFailed = true;
-                        return;
+        var SmartSection = function (pageSection, level, sections) {
+            $log.debug("Creating SmartSection ", pageSection);
+            var VIEWMODE = {FORM: "form", TABLE: "table"};
+            var self = {
+                name: pageSection.name,
+                viewMode: pageSection.viewMode,
+                model: pageSection.model,
+                fields: pageSection.fields,
+                toggleViewMode: function () {
+                    console.info('toggleViewMode', this);
+                    if (self.viewMode === VIEWMODE.FORM) {
+                        self.viewMode = VIEWMODE.TABLE;
+                    } else {
+                        var currentSet = self.getCurrentSet();
+                        currentSet.selectedRows.end = currentSet.selectedRows.start;
+                        self.viewMode = VIEWMODE.FORM;
                     }
-                    if (d.data.error) {
-                        Logger.error('Error reading data from server: ' + d.data.error.message);
-                        $scope.loadingFailed = true;
-                        return;
+                },
+                copy: function () {
+                    if (current.gridSelection) {
+                        clipboard = _.cloneDeep(current.gridSelection);
                     }
-                    $scope.filterString = searchController.filter();
-                    $scope.pageNumber = searchController.page();
-                    searchController.maxPages = d.data.maxPages;
-                    ModelCursor.setRoot(topModel, d.data.rows);
-                    PageCursor.initialize(PageDefinition.page, d.data.rows);
-                    $scope.PageCursor = PageCursor;
+                },
+                paste: function () {
+                    if (clipboard && current.gridSelection) {
+                        var fromRows = getRows(clipboard);
+                        var toRows = getRows(current.gridSelection);
 
-                    // Only support a single page section at the top
-                    //$scope.focusSet(PageDefinition.page.sections[0].model.name);
-
-                    searchController.turnSearchOff();
-                    $scope.showLoadingScreen = false;
-                });
-        }
-
-        (function addFormMethodsToScope() {
-            $scope.refresh = function () {
-                $log.debug('refresh()');
-                if (ModelCursor.dirty() && !Logger.getStatus()) {
-                    Logger.info('There are unsaved changes. Click [Refresh] again to discard those changes.');
-                    return;
+                        var counter = 0;
+                        _.forEach(toRows, function (targetRow) {
+                            if (counter >= fromRows.length) counter = 0;
+                            var fromRow = fromRows[counter];
+                            _.forEach(current.gridSelection.columns, function (yes, columnName) {
+                                targetRow.update(columnName, fromRow.data[columnName]);
+                            });
+                            counter++;
+                        });
+                    }
+                },
+                level: level || 0,
+                getCurrentSet: function () {
+                    return ModelCursor.getCurrentSet(self.model.name, self.level);
+                },
+                unbindHotKeys: function () {
+                    _.forEach(keyboardManager.keyboardEvent, function (key, value) {
+                        keyboardManager.unbind(value);
+                    });
+                },
+                bindHotKeys: function () {
+                    keyboardManager.bind('up', function () {
+                        self.getCurrentSet().movePrevious();
+                    });
+                    keyboardManager.bind('tab', function () {
+                        self.getCurrentSet().moveNext();
+                    });
+                    keyboardManager.bind('enter', function () {
+                        self.getCurrentSet().moveNext();
+                    });
+                    keyboardManager.bind('down', function () {
+                        self.getCurrentSet().moveNext();
+                    });
+                    keyboardManager.bind('ctrl+d', function () {
+                        self.getCurrentSet().delete();
+                    });
+                    keyboardManager.bind('ctrl+n', function () {
+                        self.getCurrentSet().insert();
+                    });
+                    keyboardManager.bind('meta+c', function () {
+                        self.copy();
+                    });
+                    keyboardManager.bind('meta+v', function () {
+                        self.paste();
+                    });
                 }
-                loadData();
             };
 
-            $scope.save = function () {
-                Logger.info('Saving...');
-                ModelSaver.save(topModel, ModelCursor.root, function (error) {
-                    Logger.info('');
-                    Logger.error(error);
-                });
-            };
-        })();
+            if (!sections[self.level]) {
+                sections[self.level] = {};
+            }
+            sections[self.level][self.name] = self;
+
+            _.forEach(pageSection.sections, function (section) {
+                // Maybe we should only increase level if the lower section has it's own model
+                new SmartSection(section, self.level + 1, sections);
+            });
+        };
+
+        /**
+         * Global clipboard
+         * @type {null}
+         */
+        var clipboard = null;
 
         (function initializeSearchPage() {
-            $scope.filterValues = {};
-            $scope.filterComparators = {};
-
-            angular.forEach(topModel.fields, function (field) {
-                $scope.filterComparators[field.name] = 'Contains';
-            });
-
-            $scope.runSearch = function () {
-                $log.debug('runSearch()');
-                if ($scope.filterString) {
-                    searchController.filter($scope.filterString);
-                } else {
-                    $location.search({});
-                }
-                loadData();
-            };
-
+            // TODO Not done yet
             $scope.$watch('filterValues', function (newVal) {
                 setFilterString(newVal, $scope.filterComparators);
             }, true);
@@ -155,16 +274,6 @@ angular.module('tantalim.desktop')
             $scope.filterString = '';
         })();
 
-        var recursiveLevel = 0;
-        $scope.recursive = function(name) {
-            recursiveLevel++;
-            console.info(name + '=' + recursiveLevel);
-            if (recursiveLevel > 2) return null;
-            else return [recursiveLevel];
-        };
-
-        $scope.getCurrentSet = ModelCursor.getCurrentSet;
-
         $scope.link = function (targetPage, filter, modelName) {
             var data = ModelCursor.getCurrentSet(modelName, 0).getSelectedRows();
             _.forEach(data.data, function (value, key) {
@@ -173,19 +282,16 @@ angular.module('tantalim.desktop')
             $window.location.href = '/page/' + targetPage + '/?filter=' + filter;
         };
 
-        function initializePage() {
-            $log.debug('initializePage()');
-            searchController.initialize();
-            if (searchController.showSearch) {
-                $scope.showLoadingScreen = false;
-            } else {
-                loadData();
-            }
-        }
-
-        // $locationChangeSuccess apparently gets called automatically, so don't initialize explicitly
-        // initializePage();
         $scope.$on('$locationChangeSuccess', function () {
-            initializePage();
+            $log.debug('$locationChangeSuccess()');
+            $scope.Logger = Logger;
+            var page = new SmartPage(PageDefinition.page);
+            $scope.SmartPage = page;
+
+            if (page.showSearch) {
+                page.showLoadingScreen = false;
+            } else {
+                page.loadData();
+            }
         });
     });

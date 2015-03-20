@@ -126,19 +126,19 @@ angular.module('tantalim.desktop')
                 var modifiers = {
                     shift: {
                         wanted: false,
-                        pressed: e.shiftKey ? true : false
+                        pressed: !!e.shiftKey
                     },
                     ctrl: {
                         wanted: false,
-                        pressed: e.ctrlKey ? true : false
+                        pressed: !!e.ctrlKey
                     },
                     alt: {
                         wanted: false,
-                        pressed: e.altKey ? true : false
+                        pressed: !!e.altKey
                     },
                     meta: { //Meta is Mac specific
                         wanted: false,
-                        pressed: e.metaKey ? true : false
+                        pressed: !!e.metaKey
                     }
                 };
                 // Foreach keys in label (split on +)
