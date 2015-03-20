@@ -15,17 +15,16 @@ angular.module('tantalim.desktop')
                 ctrl.activeIndex = undefined;
                 ctrl.items = undefined;
 
-                var sourceModel = $attrs.sourceModel;
                 var sourceField = $attrs.sourceField;
-                ctrl.sourceField = sourceField; // Don't remember why we have to set this here.
+                ctrl.sourceField = $attrs.sourceField; // sourceField is referenced in the template so it has to be part of ctrl
                 var targetId = $attrs.targetId;
                 var targetField = $attrs.targetField;
-                var sourceFilter = $attrs.sourceFilter;
                 var otherMappings = undefined;
                 if ($attrs.otherMappings) {
                     console.info("Eval " + $attrs.otherMappings);
                     otherMappings = $scope.$eval($attrs.otherMappings);
                 }
+                var previousFilter = '';
                 var refresh = $attrs.refresh;
                 ctrl.id = targetField;
 
@@ -34,10 +33,8 @@ angular.module('tantalim.desktop')
                     ctrl.activeIndex = undefined;
                     var currentInstance = $scope.currentInstance;
                     if (currentInstance) {
-                        console.info('selecting from', ctrl.items);
                         for (var i = 0; i < ctrl.items.length; i++) {
                             var item = ctrl.items[i];
-                            console.log("targetId = ", targetId);
                             if (targetId) {
                                 if (item.id === currentInstance.data[targetId]) {
                                     ctrl.activeIndex = i;
@@ -52,25 +49,35 @@ angular.module('tantalim.desktop')
                 };
 
                 ctrl.activate = function () {
-                    console.warn('activate $scope.currentInstance', $scope.currentInstance);
-                    var _promise = undefined;
-
-                    if (ctrl.items === undefined) {
-                        ctrl.loading = true;
-                        if (sourceFilter) {
-                            console.info("sourceFilter = ", sourceFilter);
-                            var pat = /\${(\w+)}/gi;
-                            sourceFilter = sourceFilter.replace(pat, function(match, fieldName) {
-                                console.info($scope.currentInstance);
-                                return $scope.currentInstance.getValue(fieldName);
-                            });
+                    var sourceItemText = $attrs.sourceItems;
+                    if (sourceItemText) {
+                        if (ctrl.items === undefined) {
+                            ctrl.items = $scope.$eval(sourceItemText);
                         }
+                        openItems();
+                        return;
+                    }
+
+                    var sourceFilter = $attrs.sourceFilter;
+                    if (sourceFilter) {
+                        var pat = /\${(\w+)}/gi;
+                        sourceFilter = sourceFilter.replace(pat, function (match, fieldName) {
+                            var currentValue = $scope.currentInstance.getValue(fieldName);
+                            if (currentValue === undefined) {
+                                throw new Error('You must select ' + fieldName + ' first');
+                            }
+                            return '"' + currentValue.replace('"', '\"') + '"';
+                        });
+                    }
+                    if (ctrl.items === undefined || previousFilter !== sourceFilter) {
+                        ctrl.loading = true;
                         ctrl.filter = EMPTY_SEARCH;
                         if (ctrl.filter) {
                             // TODO Support filtering the list if it's really long
                             //whereClause.push({ctrl.filter});
                         }
-                        PageService.readModelData(sourceModel, sourceFilter).then(function (d) {
+                        console.info("readModelData where", sourceFilter);
+                        PageService.readModelData($attrs.sourceModel, sourceFilter).then(function (d) {
                             ctrl.loading = false;
                             if (d.status !== 200) {
                                 // TODO Need to figure out how to bubble up these error messages to global
@@ -86,6 +93,7 @@ angular.module('tantalim.desktop')
                                 return;
                             }
                             ctrl.items = d.data.rows;
+                            previousFilter = sourceFilter;
                             openItems();
                         });
                     } else {
@@ -94,16 +102,14 @@ angular.module('tantalim.desktop')
                     focus("select-search-" + ctrl.id);
                 };
 
-                ctrl.close = function() {
-                    console.info('Closing queued');
-                    ctrl.open = false;
-                };
-
                 ctrl.choose = function (item) {
                     var currentInstance = $scope.currentInstance;
-                    console.info("updating targetField `" + targetField + "` to " + item.data[sourceField]);
                     currentInstance.update(targetField, item.data[sourceField]);
                     ctrl.display = currentInstance.data[targetField];
+                    if (targetId) {
+                        currentInstance.data[targetId] = item.id;
+                    }
+
                     if (otherMappings) {
                         console.info("updating otherMappings ", otherMappings);
                         _.forEach(otherMappings, function (mapping) {
@@ -180,7 +186,6 @@ angular.module('tantalim.desktop')
                 });
 
                 $scope.$watch('currentInstance', function (newValue) {
-                    console.info('watching currentInstance', newValue);
                     if (_.isEmpty(newValue)) {
                         ctrl.display = "";
                         ctrl.empty = true;

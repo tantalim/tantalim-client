@@ -7,8 +7,8 @@
     <link rel="stylesheet" href="/assets/lib/tantalim-client/public/css/common.css">
     <link rel="stylesheet" href="/assets/lib/tantalim-client/public/css/select.css">
 </head>
-<body class="desktop" ng-app="tantalim.desktop" data-ng-controller="PageController">
-<section class="content container">
+<body ng-app="tantalim.desktop" data-ng-controller="PageController">
+<section class="container">
     <div id="page-body">
         <div class="page-header">
             <h1>Samples</h1>
@@ -35,16 +35,24 @@
                             ></ui-select>
                 </div>
                 <div class="form-group">
-                    <label class="control-label">Empty</label>
+                    <label class="control-label">Country</label>
                     <ui-select
                             current-instance="row"
-                            source-model="ListTableColumns"
-                            source-field="PersonName"
-                            source-filter="ColumnTableID = ${TableTableID}"
-                            target-model="BuildTable"
-                            target-level="0"
-                            target-id=""
-                            target-field="NothingYet"
+                            source-items="[{id:'US',data:{CountryName: 'United States'}},{id:'MX',data:{CountryName: 'Mexico'}}]"
+                            source-field="CountryName"
+                            target-id="CountryCode"
+                            target-field="CountryName"
+                            ></ui-select>
+                </div>
+                <div class="form-group">
+                    <label class="control-label">State/Province</label>
+                    <ui-select
+                            current-instance="row"
+                            source-model="StateProvince"
+                            source-field="ProvinceName"
+                            source-filter="ProvinceCountryCode = ${CountryCode}"
+                            target-id="ProvinceCode"
+                            target-field="ProvinceName"
                             ></ui-select>
                 </div>
             </div>
@@ -105,7 +113,7 @@
     angular.module('tantalim.desktop')
             .factory('PageService', function () {
                 return {
-                    readModelData: function (sourceModel) {
+                    readModelData: function (sourceModel, filter) {
                         var rows = [];
                         switch (sourceModel) {
                             case 'People':
@@ -133,6 +141,20 @@
                                     id: 2,
                                     data: {
                                         TitleName: 'Manager'
+                                    }
+                                }];
+                                break;
+                            case 'StateProvince':
+                                console.info(filter);
+                                rows = [{
+                                    id: 'AL',
+                                    data: {
+                                        ProvinceName: 'Alabama'
+                                    }
+                                }, {
+                                    id: 'AK',
+                                    data: {
+                                        ProvinceName: 'Alaska'
                                     }
                                 }];
                                 break;
