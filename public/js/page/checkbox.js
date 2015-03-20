@@ -19,7 +19,11 @@ angular.module('tantalim.desktop')
                 };
 
                 function setValue(instance) {
-                    ctrl.value = instance.data[targetField];
+                    if (instance) {
+                        ctrl.value = instance.data[targetField];
+                    } else {
+                        ctrl.value = null;
+                    }
                 }
 
                 $scope.$watch('currentInstance', setValue);
