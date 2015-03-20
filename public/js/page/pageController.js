@@ -71,7 +71,6 @@ angular.module('tantalim.desktop')
                     });
                 },
                 focus: function (section) {
-                    console.info("focus ", section);
                     if (self.current) self.current.unbindHotKeys();
                     self.current = section;
                     section.bindHotKeys();

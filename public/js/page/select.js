@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('tantalim.select', [])
+angular.module('tantalim.desktop')
     .directive('uiSelect', function () {
         return {
             restrict: 'E',
@@ -19,6 +19,7 @@ angular.module('tantalim.select', [])
                 var sourceField = $attrs.sourceField;
                 ctrl.sourceField = sourceField; // Don't remember why we have to set this here.
                 var targetModel = $attrs.targetModel;
+                var targetLevel = $attrs.targetLevel;
                 var targetId = $attrs.targetId;
                 var targetField = $attrs.targetField;
                 var sourceFilter = $attrs.sourceFilter;
@@ -59,7 +60,7 @@ angular.module('tantalim.select', [])
                         console.info("sourceFilter = ", sourceFilter);
                         var pat = /\${(\w+)}/gi;
                         sourceFilter = sourceFilter.replace(pat, function(match, fieldName) {
-                            return ModelCursor.current.instances[targetModel].getValue(fieldName);
+                            return _getCurrent().getValue(fieldName);
                         });
                     }
 
@@ -92,11 +93,10 @@ angular.module('tantalim.select', [])
                     focus("select-search-" + ctrl.id);
                 };
                 var _getCurrent = function () {
-                    return ModelCursor.getCurrentInstance(targetModel);
+                    return ModelCursor.getOrAddCurrentSet(targetModel, targetLevel).getInstance();
                 };
 
                 ctrl.choose = function (item) {
-                    // TODO if current hasn't been added then add it first
                     var current = _getCurrent();
                     console.info("updating targetField `" + targetField + "` to " + item.data[sourceField]);
                     current.update(targetField, item.data[sourceField]);
@@ -176,7 +176,7 @@ angular.module('tantalim.select', [])
                     _scrollToActiveRow();
                 });
 
-                $scope.$watch("current", function (newValue) {
+                $scope.$watch('current', function (newValue) {
                     if (_.isEmpty(newValue)) {
                         ctrl.display = "";
                         ctrl.empty = true;

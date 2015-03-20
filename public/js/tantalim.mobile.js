@@ -232,34 +232,10 @@ angular.module('tantalim.common')
                 });
             };
 
-            var getCurrentSet = function (modelName, level) {
-                level = level || 0;
-                if (!current[level]) {
-                    current[level] = {};
-                }
-                var currentLevel = current[level];
-                if (currentLevel[modelName] === undefined && modelMap[modelName]) {
-                    return undefined;
-                }
-                return currentLevel[modelName];
-            };
-
-            var getOrAddCurrentSet = function(modelName, level) {
-                var currentSet = getCurrentSet(modelName, level);
-                if (currentSet) return currentSet;
-
-                $log.warn('current set for %s hasn\'t been created yet, creating now.', modelName, current);
-                // TODO fix this part here
-                var parentInstance = currentLevel.instances[parentName];
-                parentInstance.addChildModel(modelName);
-                resetCurrents(self.root);
-            };
-
             var resetCurrents = function (thisSet) {
                 if (!thisSet || thisSet._type !== 'SmartNodeSet') {
                     throw new Error('resetCurrents() requires a SmartNodeSet but got', thisSet);
                 }
-
 
                 var modelName = thisSet.model.modelName;
                 var level = thisSet.depth;
@@ -269,29 +245,24 @@ angular.module('tantalim.common')
 
                 var thisModel = modelMap[modelName];
 
-                console.warn("Set current level ", level, modelName, thisModel);
                 current[level][modelName] = thisSet;
                 // Remove all child levels below than this one
                 for(var i = level + 1; i < current.length; i++) {
-                    console.warn('deleting levels child "higher" than this ' + level, current[i]);
                     delete current[i];
                 }
 
                 var nextInstance = thisSet.getInstance();
-                console.warn(" Using nextInstance ", nextInstance);
 
                 if (thisModel && thisModel.children) {
                     _.forEach(thisModel.children, function (childModel) {
                         if (nextInstance && nextInstance.childModels) {
                             var childSet = nextInstance.childModels[childModel.name];
                             if (childSet) {
-                                console.info("adding child set ", childModel.name);
                                 resetCurrents(childSet);
                             }
                         }
                     });
                 }
-                console.warn("DONE Setting Current", current);
             };
 
             /**
@@ -382,7 +353,6 @@ angular.module('tantalim.common')
                     },
                     updateParent: function () {
                         if (!this.nodeSet) return;
-                        console.info(this);
                         var parent = this.nodeSet.parentInstance;
                         if (parent && parent.state === 'NO_CHANGE') {
                             parent.state = 'CHILD_UPDATED';
@@ -449,7 +419,7 @@ angular.module('tantalim.common')
                     });
                 }
 
-                $log.debug('Done creating newInstance');
+                //$log.debug('Done creating newInstance');
                 return newInstance;
             };
 
@@ -522,7 +492,6 @@ angular.module('tantalim.common')
                         }
                         this.selectedRows.start = index;
                         this.selectedRows.end = index;
-                        console.info("moveTo");
                         resetCurrents(this);
                     },
                     moveNext: function () {
@@ -638,7 +607,6 @@ angular.module('tantalim.common')
                                 this.selectedRows.start = temp;
                             }
                         }
-                        console.info("fixSelectedRows");
                         resetCurrents(this);
                     },
                     isDirty: function() {
@@ -763,12 +731,30 @@ angular.module('tantalim.common')
                     fillModelMap(model);
                     rootSet = new SmartNodeSet(model, data);
                     self.root = rootSet;
-                    console.info("setRoot");
                     resetCurrents(rootSet);
                     self.current = current;
-                    //console.log('setRoot done: current=', current);
                 },
-                getCurrentSet: getCurrentSet,
+                getCurrentSet: function (modelName, level) {
+                    level = level || 0;
+                    if (!current[level]) {
+                        current[level] = {};
+                    }
+                    var currentLevel = current[level];
+                    if (currentLevel[modelName] === undefined && modelMap[modelName]) {
+                        return undefined;
+                    }
+                    return currentLevel[modelName];
+                },
+                getOrAddCurrentSet: function(modelName, level) {
+                    var currentSet = self.getCurrentSet(modelName, level);
+                    if (currentSet) return currentSet;
+
+                    $log.warn('current set for %s hasn\'t been created yet, creating now.', modelName, current);
+                    // TODO fix this part here
+                    var parentInstance = currentLevel.instances[parentName];
+                    parentInstance.addChildModel(modelName);
+                    resetCurrents(self.root);
+                },
                 editCell: function() { return editCell },
                 dirty: function () {
                     if (!rootSet) return false;
@@ -786,13 +772,13 @@ angular.module('tantalim.common')
                 }
             };
 
-            function getRows(clipboard, minRows) {
-                var copyStart = clipboard.rows.start;
-                var copyEnd = 1 + clipboard.rows.end;
-                if (minRows > copyEnd - copyStart) copyEnd = copyStart + minRows;
-                var from = getCurrentSet(clipboard.model, level).rows;
-                return _.slice(from, copyStart, copyEnd);
-            }
+            //function getRows(clipboard, minRows) {
+            //    var copyStart = clipboard.rows.start;
+            //    var copyEnd = 1 + clipboard.rows.end;
+            //    if (minRows > copyEnd - copyStart) copyEnd = copyStart + minRows;
+            //    var from = getCurrentSet(clipboard.model, level).rows;
+            //    return _.slice(from, copyStart, copyEnd);
+            //}
 
             return self;
         }
