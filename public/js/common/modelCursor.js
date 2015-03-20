@@ -546,16 +546,6 @@ angular.module('tantalim.common')
                     }
                     return currentLevel[modelName];
                 },
-                getOrAddCurrentSet: function(modelName, level) {
-                    var currentSet = self.getCurrentSet(modelName, level);
-                    if (currentSet) return currentSet;
-
-                    $log.warn('current set for %s hasn\'t been created yet, creating now.', modelName, current);
-                    // TODO fix this part here
-                    var parentInstance = currentLevel.instances[parentName];
-                    parentInstance.addChildModel(modelName);
-                    resetCurrents(self.root);
-                },
                 editCell: function() { return editCell },
                 dirty: function () {
                     if (!rootSet) return false;

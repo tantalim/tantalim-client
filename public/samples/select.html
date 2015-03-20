@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Sample Select</title>
+    <link rel="stylesheet" href="/assets/lib/fontawesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/assets/lib/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/lib/tantalim-client/public/css/common.css">
+    <link rel="stylesheet" href="/assets/lib/tantalim-client/public/css/select.css">
+</head>
+<body class="desktop" ng-app="tantalim.desktop" data-ng-controller="PageController">
+<section class="content container">
+    <div id="page-body">
+        <div class="page-header">
+            <h1>Samples</h1>
+        </div>
+
+        <form role="form" name="TopPageForm">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="control-label">Name</label>
+                    <ui-select
+                            current-instance="row"
+                            source-model="People"
+                            source-field="PersonName"
+                            target-field="Name"
+                            ></ui-select>
+                </div>
+                <div class="form-group">
+                    <label class="control-label">Title</label>
+                    <ui-select
+                            current-instance="row"
+                            source-model="Titles"
+                            source-field="TitleName"
+                            target-field="Title"
+                            ></ui-select>
+                </div>
+                <div class="form-group">
+                    <label class="control-label">Empty</label>
+                    <ui-select
+                            current-instance="row"
+                            source-model="ListTableColumns"
+                            source-field="PersonName"
+                            source-filter="ColumnTableID = ${TableTableID}"
+                            target-model="BuildTable"
+                            target-level="0"
+                            target-id=""
+                            target-field="NothingYet"
+                            ></ui-select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                {{row}}
+            </div>
+        </form>
+    </div>
+</section>
+
+<div id="3rd_party_scripts">
+    <!-- Bootstrap JS -->
+    <script type="text/javascript" src="/assets/lib/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="/assets/lib/bootstrap/dist/js/bootstrap.js"></script>
+    <!-- Angular JS -->
+    <script type="text/javascript" src="/assets/lib/angular/angular.js"></script>
+    <!-- Angular UI -->
+    <script type="text/javascript" src="/assets/lib/angular-bootstrap/ui-bootstrap.js"></script>
+    <script type="text/javascript" src="/assets/lib/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+
+    <script type="text/javascript" src="/assets/lib/angular-ui-utils/ui-utils.js"></script>
+
+    <!-- Other JS -->
+    <script type="text/javascript" src="/assets/lib/lodash/lodash.js"></script>
+</div>
+<script type="text/javascript">
+    angular.module('tantalim.desktop', []);
+
+
+    angular.module('tantalim.desktop')
+            .controller('PageController',
+            function ($scope) {
+
+                var SmartNodeInstance = function (model, row) {
+                    var self = {
+                        id: row.id,
+                        data: row.data,
+                        getValue: function (fieldName) {
+                            return self.data[fieldName];
+                        },
+                        update: function (fieldName, newValue) {
+                            self.data[fieldName] = newValue;
+                            self.state = 'UPDATED';
+                        },
+                        state: 'NO_CHANGE'
+                    };
+                    return self;
+                };
+
+                $scope.row = new SmartNodeInstance({}, {
+                    id: 1,
+                    data: {
+                        Name: 'John',
+                        Title: null
+                    }
+                });
+            });
+    angular.module('tantalim.desktop')
+            .factory('PageService', function () {
+                return {
+                    readModelData: function (sourceModel) {
+                        var rows = [];
+                        switch (sourceModel) {
+                            case 'People':
+                                rows = [{
+                                    id: 1,
+                                    data: {
+                                        PersonName: 'John',
+                                        Title: 'Programmer'
+                                    }
+                                }, {
+                                    id: 2,
+                                    data: {
+                                        PersonName: 'William',
+                                        Title: 'Manager'
+                                    }
+                                }];
+                                break;
+                            case 'Titles':
+                                rows = [{
+                                    id: 1,
+                                    data: {
+                                        TitleName: 'Programmer'
+                                    }
+                                }, {
+                                    id: 2,
+                                    data: {
+                                        TitleName: 'Manager'
+                                    }
+                                }];
+                                break;
+                            default:
+                                rows = [];
+                        }
+                        return {
+                            then: function (callback) {
+                                callback({
+                                    status: 200,
+                                    data: {
+                                        rows: rows
+                                    }
+                                });
+                            }
+                        };
+                    }
+                };
+            });
+
+</script>
+<script type="text/javascript" src="/assets/lib/tantalim-client/public/js/page/select.js"></script>
+</body>
+</html>

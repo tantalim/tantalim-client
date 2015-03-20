@@ -27,7 +27,8 @@
 }
 
 .ui-select-bootstrap > .ui-select-match > .loading {
-  right: 30px;
+  top: 7px;
+  left: 7px;
   font-size: 150%;
   position: absolute;
 }
@@ -39,4 +40,10 @@
   height: auto;
   max-height: 200px;
   overflow-x: hidden;
+}
+
+button.ui-select-close {
+  position: absolute;
+  top: 7px;
+  right: 7px;
 }
