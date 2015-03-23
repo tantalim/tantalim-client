@@ -9,9 +9,10 @@ module.exports = function (grunt) {
                 files: [
                     'gruntfile.js',
                     //'test/unit/**/*.js',
-                    'public/js/common/**/*.js',
-                    'public/js/mobile/**/*.js',
-                    'public/js/page/**/*.js'
+                    'public/js/common/*.js',
+                    'public/js/mobile/*.js',
+                    'public/js/page/ui/*.js',
+                    'public/js/page/*.js'
                 ],
                 tasks: ['compile', 'jshint'],
                 options: {
@@ -58,6 +59,12 @@ module.exports = function (grunt) {
                     'public/js/common/**/*.js'
                 ],
                 dest: 'public/js/tantalim.desktop.js'
+            },
+            pageUI: {
+                src: [
+                    'public/js/page/ui/*.js'
+                ],
+                dest: 'public/js/tantalim.page.ui.js'
             },
             mobile: {
                 src: [

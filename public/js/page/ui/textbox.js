@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('tantalim.desktop')
-    .directive('uiTextbox', function () {
+    .directive('tntTextbox', function () {
         return {
             restrict: 'E',
             controllerAs: '$textbox',
@@ -17,25 +17,30 @@ angular.module('tantalim.desktop')
                 ctrl.id = fieldName;
                 ctrl.name = fieldName;
 
-                ctrl.disabled = function() {
+                ctrl.change = function() {
+                    $scope.currentInstance.update(fieldName);
+                };
+                ctrl.disabled = function () {
                     // This section still needs some work
-                    if ($attrs.disabled ==='true') return true;
+                    if ($attrs.disabled === 'true') return true;
                     var notUpdateable = $attrs.updateable === 'false';
                     return $scope.state !== 'INSERTED' && notUpdateable;
                 };
 
                 //$scope.$watch('currentInstance', setValue);
             },
-            scope: {
-                currentInstance: "="
-            },
 
+            scope: {
+                currentInstance: '='
+            },
             template: '<label class="control-label" for="{{$textbox.id}}">{{$textbox.label}}</label>' +
             '<input type="text" class="form-control" id="{{$textbox.id}}" name="{{$textbox.name}}"' +
             'data-ng-model="currentInstance.data[$textbox.name]" ng-focus=""' +
+            'ng-change="$textbox.change()"' +
             'ng-disabled="$textbox.disabled()"' +
             'placeholder="{{$textbox.placeholder}}" select-on-click>' +
-            '<span data-ng-show="$textbox.help" class="help-block">{{$textbox.help}}</span>'
+            '<span data-ng-show="$textbox.help" class="help-block">{{$textbox.help}}</span>' +
+            '<ul><tntLink ng-repeat="member in collection" member="member"></tntLink></ul>'
 
             /**
              ng-change="SmartPage.getSection('@(page.name)', @depth).getCurrentSet().getInstance().update('@(field.name)')"
@@ -65,16 +70,10 @@ angular.module('tantalim.desktop')
             }
         };
     })
-    .directive('link', function () {
+    .directive('tntLink', function () {
         return {
             restrict: 'E',
-            link: function (scope, element) {
-                element.on('click', function () {
-                    this.select();
-                });
-            }
+            template: 'asdf'
         };
     })
-
-;
 ;

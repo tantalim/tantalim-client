@@ -1,6 +1,5 @@
 'use strict';
 /* global _ */
-/* global angular */
 
 angular.module('tantalim.desktop')
     .controller('PageController',
@@ -91,7 +90,7 @@ angular.module('tantalim.desktop')
                     console.log('SmartPage.sections', self.sections);
                     ModelCursor.toConsole();
                 },
-                initialize: function (p, data) {
+                initialize: function (p) {
                     $log.debug('SmartPage.initialize()', p);
                     _.forEach(p.sections, function (section) {
                         new SmartSection(section, 0, self.sections);
@@ -152,8 +151,8 @@ angular.module('tantalim.desktop')
         };
 
         var SmartSection = function (pageSection, level, sections) {
-            $log.debug("Creating SmartSection ", pageSection);
-            var VIEWMODE = {FORM: "form", TABLE: "table"};
+            $log.debug('Creating SmartSection ', pageSection);
+            var VIEWMODE = {FORM: 'form', TABLE: 'table'};
             var self = {
                 name: pageSection.name,
                 viewMode: pageSection.viewMode,
@@ -170,12 +169,14 @@ angular.module('tantalim.desktop')
                     }
                 },
                 copy: function () {
-                    if (current.gridSelection) {
+                    // TODO Finish off the copy method
+                    if (getCurrentSet().gridSelection) {
                         clipboard = _.cloneDeep(current.gridSelection);
                     }
                 },
                 paste: function () {
-                    if (clipboard && current.gridSelection) {
+                    // TODO Finish off the paste method
+                    if (clipboard && getCurrentSet().gridSelection) {
                         var fromRows = getRows(clipboard);
                         var toRows = getRows(current.gridSelection);
 

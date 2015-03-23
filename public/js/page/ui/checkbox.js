@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('tantalim.desktop')
-    .directive('uiCheckbox', function () {
+    .directive('tntCheckbox', function () {
         return {
             restrict: 'E',
             controllerAs: '$checkbox',
@@ -29,7 +29,7 @@ angular.module('tantalim.desktop')
                 $scope.$watch('currentInstance', setValue);
             },
             scope: {
-                currentInstance: "="
+                currentInstance: '='
             },
 
             template: '<div class="checkbox"><label class="control-label" class="ui-checkbox" for="{{$checkbox.id}}" data-ng-click="$checkbox.toggle()">' +

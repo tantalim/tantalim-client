@@ -1,0 +1,20 @@
+<script type="text/ng-template" id="select.tpl.html">
+    <label class="control-label">{{$select.label}}</label>
+    <div class="ui-select-bootstrap dropdown" ng-class="{open: $select.open}">
+        <button type="button" class="btn btn-default dropdown-toggle form-control ui-select-match"
+                focus-on="select-button-{{$select.id}}" data-ng-hide="$select.open" data-ng-click="$select.activate()">
+            <span ng-hide="$select.empty">{{$select.display}}</span><span ng-show="$select.empty" class="text-muted">Select...</span>
+            <i class="loading fa fa-spinner fa-spin" data-ng-show="$select.loading"></i><span class="caret"></span>
+        </button>
+        <button class="btn btn-xs btn-default ui-select-close" data-ng-show="$select.open"
+                data-ng-click="$select.open = false"><i class="fa fa-times"></i></button>
+        <input class="form-control" data-ng-show="$select.open" focus-on="select-search-{{$select.id}}"
+               data-ng-model="$select.filter" select-keydown>
+        <ul class="ui-select-choices ui-select-choices-content dropdown-menu" role="menu"
+            ng-show="$select.items.length> 0">
+            <li class="ui-select-choices-row" data-ng-repeat="item in $select.items"
+                ng-class="{active: $select.activeIndex===$index}" ng-mouseenter="$select.activeIndex = $index">
+                <a href="" data-ng-click="$select.choose(item)">{{item.data[$select.sourceField]}}</a></li>
+        </ul>
+    </div>
+</script>

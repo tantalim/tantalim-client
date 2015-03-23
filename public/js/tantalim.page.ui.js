@@ -1,7 +1,107 @@
 'use strict';
+// Source: public/js/page/ui/checkbox.js
+angular.module('tantalim.desktop')
+    .directive('tntCheckbox', function () {
+        return {
+            restrict: 'E',
+            controllerAs: '$checkbox',
+            controller: function ($scope, $attrs) {
+
+                var ctrl = this;
+                ctrl.value = null;
+                ctrl.label = $attrs.label;
+
+                var targetField = $attrs.targetField;
+                var required = $attrs.required === 'true';
+                ctrl.toggle = function () {
+                    $scope.currentInstance.toggle(targetField, required);
+                    setValue($scope.currentInstance);
+                };
+
+                function setValue(instance) {
+                    if (instance) {
+                        ctrl.value = instance.data[targetField];
+                    } else {
+                        ctrl.value = null;
+                    }
+                }
+
+                $scope.$watch('currentInstance', setValue);
+            },
+            scope: {
+                currentInstance: '='
+            },
+
+            template: '<div class="checkbox"><label class="control-label" class="ui-checkbox" for="{{$checkbox.id}}" data-ng-click="$checkbox.toggle()">' +
+            '<i data-ng-show="$checkbox.value === true" class="fa fa-lg fa-fw fa-check-square-o"></i>' +
+            '<i data-ng-show="$checkbox.value === false" class="fa fa-lg fa-fw fa-square-o"></i>' +
+            '<i data-ng-show="$checkbox.value === null" class="fa fa-lg fa-fw fa-square-o disabled"></i>' +
+            ' {{$checkbox.label}} </label></div>'
+        };
+    })
+;
+
+// Source: public/js/page/ui/focusMe.js
+/* global angular */
 
 angular.module('tantalim.desktop')
-    .directive('uiSelect', function () {
+    .directive('focusMe', function ($timeout) {
+        return {
+            scope: {trigger: '=focusMe'},
+            link: function (scope, element) {
+                scope.$watch('trigger', function (value) {
+                    if (value === true) {
+                        $timeout(function () {
+                            element[0].focus();
+                            element[0].select();
+                        });
+                    }
+                });
+            }
+        };
+    });
+
+// Source: public/js/page/ui/section.js
+angular.module('tantalim.desktop')
+    .directive('tntSection', function () {
+        return {
+            restrict: 'E',
+            controllerAs: '$section',
+            controller: function ($scope, $attrs) {
+                var ctrl = this;
+                ctrl.id = $attrs.id;
+                ctrl.title = $attrs.title;
+                ctrl.current = $attrs.current;
+            },
+            transclude: true,
+            template: '<div id="{{$section.id}}" class="tntSection childSection">' +
+            '<h2>{{$section.title}}</h2>' +
+            '<div data-ng-hide="hide{{$section.id}} || {{$section.current}}.getCurrentSet().rows.length">' +
+            '<div ng-transclude></div>' +
+            '</div>'
+        };
+    })
+    .directive('tntForm', function () {
+        return {
+            restrict: 'E',
+            controllerAs: '$form',
+            controller: function ($scope, $attrs) {
+                var ctrl = this;
+                ctrl.id = $attrs.id;
+            },
+            transclude: true,
+            template: '<div id="$section.id" class="tntSection childSection">' +
+            '<div ng-transclude></div>' +
+            '</div>'
+        };
+    })
+;
+
+// Source: public/js/page/ui/select.js
+/* global _ */
+
+angular.module('tantalim.desktop')
+    .directive('tntSelect', function () {
         return {
             restrict: 'E',
             controllerAs: '$select',
@@ -20,13 +120,12 @@ angular.module('tantalim.desktop')
                 ctrl.sourceField = $attrs.sourceField; // sourceField is referenced in the template so it has to be part of ctrl
                 var targetId = $attrs.targetId;
                 var targetField = $attrs.targetField;
-                var otherMappings = undefined;
+                var otherMappings;
                 if ($attrs.otherMappings) {
-                    console.info("Eval " + $attrs.otherMappings);
+                    console.info('Eval ' + $attrs.otherMappings);
                     otherMappings = $scope.$eval($attrs.otherMappings);
                 }
                 var previousFilter = '';
-                var refresh = $attrs.refresh;
                 ctrl.id = targetField;
 
                 var openItems = function () {
@@ -73,11 +172,11 @@ angular.module('tantalim.desktop')
                     if (ctrl.items === undefined || previousFilter !== sourceFilter) {
                         ctrl.loading = true;
                         ctrl.filter = EMPTY_SEARCH;
-                        if (ctrl.filter) {
-                            // TODO Support filtering the list if it's really long
-                            //whereClause.push({ctrl.filter});
-                        }
-                        console.info("readModelData where", sourceFilter);
+                        // TODO Support filtering the list if it's really long
+                        //if (ctrl.filter) {
+                        //    whereClause.push({ctrl.filter});
+                        //}
+                        console.info('readModelData where', sourceFilter);
                         PageService.readModelData($attrs.sourceModel, sourceFilter).then(function (d) {
                             ctrl.loading = false;
                             if (d.status !== 200) {
@@ -100,7 +199,7 @@ angular.module('tantalim.desktop')
                     } else {
                         openItems();
                     }
-                    focus("select-search-" + ctrl.id);
+                    focus('select-search-' + ctrl.id);
                 };
 
                 ctrl.choose = function (item) {
@@ -112,14 +211,14 @@ angular.module('tantalim.desktop')
                     }
 
                     if (otherMappings) {
-                        console.info("updating otherMappings ", otherMappings);
+                        console.info('updating otherMappings ', otherMappings);
                         _.forEach(otherMappings, function (mapping) {
                             currentInstance.update(mapping.target, item.data[mapping.source]);
                         });
                     }
                     ctrl.open = false;
                     ctrl.empty = false;
-                    focus("select-button-" + ctrl.id);
+                    focus('select-button-' + ctrl.id);
                 };
 
                 var Key = {
@@ -130,7 +229,7 @@ angular.module('tantalim.desktop')
                     Escape: 27
                 };
 
-                ctrl.keydown = function (key, current) {
+                ctrl.keydown = function (key) {
                     switch (key) {
                         case Key.Down:
                             if (ctrl.activeIndex < ctrl.items.length - 1) {
@@ -152,7 +251,7 @@ angular.module('tantalim.desktop')
                             break;
                         case Key.Escape:
                             ctrl.open = false;
-                            focus("select-button-" + ctrl.id);
+                            focus('select-button-' + ctrl.id);
                             break;
                         default:
                             return false;
@@ -182,13 +281,13 @@ angular.module('tantalim.desktop')
                     }
                 };
 
-                $scope.$watch('$select.activeIndex', function (newValue) {
+                $scope.$watch('$select.activeIndex', function () {
                     _scrollToActiveRow();
                 });
 
                 $scope.$watch('currentInstance', function (newValue) {
                     if (_.isEmpty(newValue)) {
-                        ctrl.display = "";
+                        ctrl.display = '';
                         ctrl.empty = true;
                     } else {
                         ctrl.display = newValue.data[targetField];
@@ -198,7 +297,7 @@ angular.module('tantalim.desktop')
                 });
             },
             scope: {
-                currentInstance: "="
+                currentInstance: '='
             },
             template: '<label class="control-label" for="@(page.model.name)-@field.name">{{$select.label}}</label><div class="ui-select-bootstrap dropdown" ng-class="{open: $select.open}">' +
             '<button type="button" class="btn btn-default dropdown-toggle form-control ui-select-match" focus-on="select-button-{{$select.id}}" data-ng-hide="$select.open" data-ng-click="$select.activate()">' +
@@ -217,7 +316,7 @@ angular.module('tantalim.desktop')
     // TODO Consider moving this to a util module
     .directive('selectKeydown', function () {
         return function (scope, element) {
-            element.bind("keydown keypress", function (event) {
+            element.bind('keydown keypress', function (event) {
                 scope.$apply(function () {
                     var processed = scope.$select.keydown(event.which, scope.current);
                     if (processed) {
@@ -243,6 +342,85 @@ angular.module('tantalim.desktop')
             $timeout(function () {
                 $rootScope.$broadcast('focusOn', name);
             });
-        }
+        };
+    })
+;
+
+// Source: public/js/page/ui/textbox.js
+angular.module('tantalim.desktop')
+    .directive('tntTextbox', function () {
+        return {
+            restrict: 'E',
+            controllerAs: '$textbox',
+            controller: function ($scope, $attrs) {
+
+                var ctrl = this;
+                ctrl.value = null;
+                ctrl.label = $attrs.label;
+                ctrl.placeholder = $attrs.placeholder;
+                ctrl.help = $attrs.help;
+
+                var fieldName = $attrs.name;
+                ctrl.id = fieldName;
+                ctrl.name = fieldName;
+
+                ctrl.change = function() {
+                    $scope.currentInstance.update(fieldName);
+                };
+                ctrl.disabled = function () {
+                    // This section still needs some work
+                    if ($attrs.disabled === 'true') return true;
+                    var notUpdateable = $attrs.updateable === 'false';
+                    return $scope.state !== 'INSERTED' && notUpdateable;
+                };
+
+                //$scope.$watch('currentInstance', setValue);
+            },
+
+            scope: {
+                currentInstance: '='
+            },
+            template: '<label class="control-label" for="{{$textbox.id}}">{{$textbox.label}}</label>' +
+            '<input type="text" class="form-control" id="{{$textbox.id}}" name="{{$textbox.name}}"' +
+            'data-ng-model="currentInstance.data[$textbox.name]" ng-focus=""' +
+            'ng-change="$textbox.change()"' +
+            'ng-disabled="$textbox.disabled()"' +
+            'placeholder="{{$textbox.placeholder}}" select-on-click>' +
+            '<span data-ng-show="$textbox.help" class="help-block">{{$textbox.help}}</span>' +
+            '<ul><tntLink ng-repeat="member in collection" member="member"></tntLink></ul>'
+
+            /**
+             ng-change="SmartPage.getSection('@(page.name)', @depth).getCurrentSet().getInstance().update('@(field.name)')"
+             @if(field.blurFunction.isDefined) {
+                    ng-blur="@Html(field.blurFunction.get)"
+             }
+             @if(field.required) {
+                    ng-required="SmartPage.getSection('@(page.name)', @depth).getCurrentSet().getInstance()"
+             }
+             >
+             @for(link <- field.links) {
+                    <i class="fa fa-link fa-rotate-90" data-ng-click=""></i>
+                    <a href="" data-ng-click="link('@link.page.name', '@link.filter', '@page.model.name')">@link.page.title</a>
+             }
+             *
+             */
+
+        };
+    })
+    .directive('selectOnClick', function () {
+        return {
+            restrict: 'A',
+            link: function (scope, element) {
+                element.on('click', function () {
+                    this.select();
+                });
+            }
+        };
+    })
+    .directive('tntLink', function () {
+        return {
+            restrict: 'E',
+            template: 'asdf'
+        };
     })
 ;

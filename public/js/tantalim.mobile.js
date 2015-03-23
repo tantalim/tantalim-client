@@ -735,6 +735,7 @@ angular.module('tantalim.common')
                     self.current = current;
                 },
                 getCurrentSet: function (modelName, level) {
+                    console.info('getCurrentSet', modelName, level);
                     level = level || 0;
                     if (!current[level]) {
                         current[level] = {};
