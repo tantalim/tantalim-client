@@ -238,7 +238,7 @@ angular.module('tantalim.common')
                 }
 
                 var modelName = thisSet.model.modelName;
-                var level = thisSet.depth;
+                var level = 0; // thisSet.depth will probably remove level
                 if (!current[level]) {
                     current[level] = {};
                 }
@@ -471,7 +471,7 @@ angular.module('tantalim.common')
                      * Array of SmartNodeInstances
                      */
                     deleted: [],
-                    depth: depth || 0,
+                    depth: depth || 0, // Will probably remove level
 
                     sort: function (reverse) {
                         var orderBy = this.model.orderBy;
@@ -735,8 +735,9 @@ angular.module('tantalim.common')
                     self.current = current;
                 },
                 getCurrentSet: function (modelName, level) {
-                    console.info('getCurrentSet', modelName, level);
+                    //console.info('getCurrentSet', modelName, level);
                     level = level || 0;
+                    level = 0; // Will probably remove level
                     if (!current[level]) {
                         current[level] = {};
                     }

@@ -1,5 +1,6 @@
 'use strict';
 /* global _ */
+/* global angular */
 
 angular.module('tantalim.desktop')
     .controller('PageController',
@@ -18,6 +19,7 @@ angular.module('tantalim.desktop')
                  */
                 sections: [],
                 getSection: function (sectionName, level) {
+                    level = 0; // Will probably remove level
                     if (!self.sections[level] || !self.sections[level][sectionName]) {
                         $log.info('self.sections[level][sectionName] has not been created yet');
                         return;
@@ -96,11 +98,19 @@ angular.module('tantalim.desktop')
                         new SmartSection(section, 0, self.sections);
                     });
 
-                    console.info(self.sections);
                     self.topSection = self.sections[0][PageDefinition.page.sections[0].name];
                     self.showSearch = $location.path() === searchPath;
+
                     angular.forEach(self.topSection.fields, function (field) {
-                        self.filterComparators[field.name] = 'Contains';
+                        switch (field.fieldType) {
+                            case 'checkbox':
+                                console.info(field.fieldType);
+                                self.filterValues[field.name] = null;
+                                self.filterComparators[field.name] = 'Equals';
+                                break;
+                            default:
+                                self.filterComparators[field.name] = 'Contains';
+                        }
                     });
                     self.filter();
                     self.focus(self.topSection);
@@ -118,6 +128,15 @@ angular.module('tantalim.desktop')
                 turnSearchOff: function () {
                     $location.path('/');
                     self.showSearch = false;
+                },
+                runSearch: function() {
+                    $log.debug('runSearch()');
+                    if ($scope.filterString) {
+                        self.filter($scope.filterString);
+                    } else {
+                        $location.search({});
+                    }
+                    self.loadData();
                 },
                 filter: function (newFilter) {
                     if (newFilter) {
@@ -191,8 +210,9 @@ angular.module('tantalim.desktop')
                         });
                     }
                 },
-                level: level || 0,
+                level: 0, // level || will probably remove level
                 getCurrentSet: function () {
+                    //console.warn('pageController.getCurrentSet()', self.model.name, self.level);
                     return ModelCursor.getCurrentSet(self.model.name, self.level);
                 },
                 unbindHotKeys: function () {
@@ -247,18 +267,18 @@ angular.module('tantalim.desktop')
 
         (function initializeSearchPage() {
             // TODO Not done yet
-            $scope.$watch('filterValues', function (newVal) {
-                setFilterString(newVal, $scope.filterComparators);
+            $scope.$watch('SmartPage.filterValues', function (newVal) {
+                setFilterString(newVal, $scope.SmartPage.filterComparators);
             }, true);
 
-            $scope.$watch('filterComparators', function (newVal) {
-                setFilterString($scope.filterValues, newVal);
+            $scope.$watch('SmartPage.filterComparators', function (newVal) {
+                setFilterString($scope.SmartPage.filterValues, newVal);
             }, true);
 
             var setFilterString = function (filterValues, filterComparators) {
                 var filterString = '';
 
-                angular.forEach($scope.filterValues, function (value, fieldName) {
+                angular.forEach(filterValues, function (value, fieldName) {
                     if (value) {
                         if (filterString.length > 0) {
                             filterString += ' AND ';
