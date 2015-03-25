@@ -283,11 +283,8 @@ angular.module('tantalim.desktop')
                                 self.loadingFailed = true;
                                 return;
                             }
-                            //self.filterString = self.filter();
-                            //self.pageNumber = SearchController.page();
                             self.maxPages = d.data.maxPages;
                             ModelCursor.setRoot(topModel, d.data.rows);
-                            self.initialize(PageDefinition.page, d.data.rows);
                             self.turnSearchOff();
                             self.showLoadingScreen = false;
                         });
@@ -351,11 +348,9 @@ angular.module('tantalim.desktop')
                     });
                     self.filter();
                     self.focus(self.topSection);
-
-                    // Not sure we need this here
-                    //page.loadData();
                 },
                 showSearch: undefined,
+                filterString: '',
                 filterValues: {},
                 filterComparators: {},
                 turnSearchOn: function () {
@@ -366,10 +361,10 @@ angular.module('tantalim.desktop')
                     $location.path('/');
                     self.showSearch = false;
                 },
-                runSearch: function() {
+                runSearch: function () {
                     $log.debug('runSearch()');
-                    if ($scope.filterString) {
-                        self.filter($scope.filterString);
+                    if (self.filterString) {
+                        self.filter(self.filterString);
                     } else {
                         $location.search({});
                     }
@@ -377,6 +372,7 @@ angular.module('tantalim.desktop')
                 },
                 filter: function (newFilter) {
                     if (newFilter) {
+                        console.info('Updating filter', newFilter);
                         $location.search('filter', newFilter);
                     }
                     return $location.search().filter;
@@ -384,9 +380,15 @@ angular.module('tantalim.desktop')
                 maxPages: 99,
                 page: function (newPage) {
                     if (newPage) {
+                        console.info('Updating page', newPage);
                         $location.search('page', newPage);
                     }
                     return parseInt($location.search().page || 1);
+                },
+                showPagingOnSection: function (sectionName) {
+                    if (self.maxPages > 1) {
+                        return self.topSection.name === sectionName;
+                    } else return false;
                 },
                 previousPage: function () {
                     var currentPage = self.page();
@@ -502,8 +504,7 @@ angular.module('tantalim.desktop')
          */
         var clipboard = null;
 
-        (function initializeSearchPage() {
-            // TODO Not done yet
+        function initializeSearchPage() {
             $scope.$watch('SmartPage.filterValues', function (newVal) {
                 setFilterString(newVal, $scope.SmartPage.filterComparators);
             }, true);
@@ -525,11 +526,11 @@ angular.module('tantalim.desktop')
                     }
                 });
 
-                $scope.filterString = filterString;
+                $scope.SmartPage.filterString = filterString;
             };
 
-            $scope.filterString = '';
-        })();
+            setFilterString($scope.SmartPage.filterValues, $scope.SmartPage.filterComparators);
+        }
 
         $scope.link = function (targetPage, filter, modelName) {
             var data = ModelCursor.getCurrentSet(modelName, 0).getSelectedRows();
@@ -539,18 +540,20 @@ angular.module('tantalim.desktop')
             $window.location.href = '/page/' + targetPage + '/?filter=' + filter;
         };
 
+        var page = new SmartPage(PageDefinition.page);
+        $scope.SmartPage = page;
+        initializeSearchPage();
+        $scope.Logger = Logger;
+
         $scope.$on('$locationChangeSuccess', function () {
             $log.debug('$locationChangeSuccess()');
-            $scope.Logger = Logger;
-            var page = new SmartPage(PageDefinition.page);
-            $scope.SmartPage = page;
-
             if (page.showSearch) {
                 page.showLoadingScreen = false;
             } else {
                 page.loadData();
             }
         });
+
     });
 
 // Source: public/js/page/ui/checkbox.js
