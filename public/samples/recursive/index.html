@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Example - example-example83-production</title>
+    <style>
+        div.subSection {
+            padding-left: 2em;
+        }
+    </style>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.0-beta.5/angular.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/3.5.0/lodash.min.js"></script>
+    <script src="script.js"></script>
+</head>
+
+<body data-ng-app="myApp">
+<div data-ng-controller="ExampleController">
+    <h1>Top</h1>
+
+    <div data-ng-repeat="section in root | limitTo:1" data-ng-include="'template.html'"></div>
+</div>
+</body>
+
+
+</html>

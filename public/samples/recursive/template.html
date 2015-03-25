@@ -1,0 +1,14 @@
+<h2>Name: {{section.name}}</h2>
+
+<div>
+    <button data-ng-click="add(section)">Insert</button>
+    <button data-ng-click="remove(section)" data-ng-show="section.children.length > 0">Delete</button>
+</div>
+
+<ul>
+    <li data-ng-repeat="row in section.children">
+        <button data-ng-click="select(row)">{{row.name}}</button>
+    </li>
+</ul>
+
+<div class="subSection" data-ng-repeat="section in section.children | limitTo:1" data-ng-include="'template.html'"></div>
