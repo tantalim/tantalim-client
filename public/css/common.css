@@ -160,3 +160,8 @@ body.desktop {
 .sectionContent {
     clear: both;
 }
+
+table.tnt-grid th span.glyphicon {
+    float: right;
+    color: #777777;
+}
