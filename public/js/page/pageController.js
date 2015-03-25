@@ -188,16 +188,21 @@ angular.module('tantalim.desktop')
                         currentSet.selectedRows.end = currentSet.selectedRows.start;
                         self.viewMode = VIEWMODE.FORM;
                     }
+                    self.unbindHotKeys();
+                    self.bindHotKeys();
                 },
                 copy: function () {
+                    var currentSet = self.getCurrentSet();
+
                     // TODO Finish off the copy method
-                    if (getCurrentSet().gridSelection) {
-                        clipboard = _.cloneDeep(current.gridSelection);
+                    if (currentSet.selectedRows) {
+                        $scope.clipboard = currentSet.selectedRows;
+                        //_.cloneDeep(current.gridSelection);
                     }
                 },
                 paste: function () {
                     // TODO Finish off the paste method
-                    if (clipboard && getCurrentSet().gridSelection) {
+                    if ($scope.clipboard && getCurrentSet().gridSelection) {
                         var fromRows = getRows(clipboard);
                         var toRows = getRows(current.gridSelection);
 
@@ -223,29 +228,40 @@ angular.module('tantalim.desktop')
                     });
                 },
                 bindHotKeys: function () {
-                    keyboardManager.bind('up', function () {
-                        self.getCurrentSet().movePrevious();
+                    if (self.viewMode === VIEWMODE.TABLE) {
+                        keyboardManager.bind('up', function () {
+                            self.getCurrentSet().movePrevious();
+                        });
+                        keyboardManager.bind('down', function () {
+                            self.getCurrentSet().moveNext();
+                        });
+                        keyboardManager.bind('shift+up', function () {
+                            self.getCurrentSet().selectUp();
+                        });
+                        keyboardManager.bind('shift+down', function () {
+                            self.getCurrentSet().selectDown();
+                        });
+                        keyboardManager.bind('meta+c', function () {
+                            self.copy();
+                        });
+                        keyboardManager.bind('meta+v', function () {
+                            self.paste();
+                        });
+                    }
+                    keyboardManager.bind('ctrl+t', function () {
+                        self.toggleViewMode();
                     });
-                    keyboardManager.bind('tab', function () {
-                        self.getCurrentSet().moveNext();
-                    });
-                    keyboardManager.bind('enter', function () {
-                        self.getCurrentSet().moveNext();
-                    });
-                    keyboardManager.bind('down', function () {
-                        self.getCurrentSet().moveNext();
-                    });
+                    //keyboardManager.bind('tab', function () {
+                    //    self.getCurrentSet().moveNext();
+                    //});
+                    //keyboardManager.bind('enter', function () {
+                    //    self.getCurrentSet().moveNext();
+                    //});
                     keyboardManager.bind('ctrl+d', function () {
                         self.getCurrentSet().delete();
                     });
                     keyboardManager.bind('ctrl+n', function () {
                         self.getCurrentSet().insert();
-                    });
-                    keyboardManager.bind('meta+c', function () {
-                        self.copy();
-                    });
-                    keyboardManager.bind('meta+v', function () {
-                        self.paste();
                     });
                 }
             };
@@ -265,7 +281,7 @@ angular.module('tantalim.desktop')
          * Global clipboard
          * @type {null}
          */
-        var clipboard = null;
+        $scope.clipboard = null;
 
         function initializeSearchPage() {
             $scope.$watch('SmartPage.filterValues', function (newVal) {

@@ -8,14 +8,12 @@ angular.module('tantalim.common')
             var rootSet;
             var current;
             var modelMap;
-            var clipboard;
             var editCell;
 
             var clear = function () {
                 rootSet = null;
                 current = []; // {sets: {}, gridSelection: {}, editing: {}}
                 modelMap = {};
-                clipboard = {};
                 editCell = {};
             };
             clear();
@@ -304,6 +302,12 @@ angular.module('tantalim.common')
                     moveToBottom: function () {
                         this.moveTo(this.rows.length - 1);
                     },
+                    selectUp: function () {
+                        this.selectedRows.end--;
+                    },
+                    selectDown: function () {
+                        this.selectedRows.end++;
+                    },
                     mousedown: function (row, column) {
                         if (event.which === MOUSE.LEFT) {
                             if (this.cellIsEditing(row, column)) {
@@ -564,14 +568,6 @@ angular.module('tantalim.common')
                     }
                 }
             };
-
-            //function getRows(clipboard, minRows) {
-            //    var copyStart = clipboard.rows.start;
-            //    var copyEnd = 1 + clipboard.rows.end;
-            //    if (minRows > copyEnd - copyStart) copyEnd = copyStart + minRows;
-            //    var from = getCurrentSet(clipboard.model, level).rows;
-            //    return _.slice(from, copyStart, copyEnd);
-            //}
 
             return self;
         }
