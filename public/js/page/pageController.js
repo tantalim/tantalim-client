@@ -6,10 +6,34 @@ angular.module('tantalim.desktop')
     .controller('PageController',
     function ($scope, $log, $location, PageDefinition, PageService, ModelCursor, keyboardManager, ModelSaver, $window, Logger) {
 
-        var editCell = {};
+        /**
+         * You can only edit a single cell in a single section at a time so this is a global var (page level at least)
+         * @type {null}
+         */
+        var editSection = null;
         var MOUSE = {
             LEFT: 1,
             RIGHT: 3
+        };
+
+        var Selector = function () {
+            var selector = {
+                start: 0,
+                end: 0,
+                getStart: function () {
+                    return selector.start < selector.end ? selector.start : selector.end;
+                },
+                getEnd: function () {
+                    return selector.start < selector.end ? selector.end : selector.start;
+                },
+                between: function (value) {
+                    return selector.getStart() <= value && value <= selector.getEnd();
+                },
+                length: function() {
+                    return selector.getEnd() - selector.getStart();
+                }
+            };
+            return selector;
         };
 
         var SmartPage = function (page) {
@@ -106,7 +130,6 @@ angular.module('tantalim.desktop')
                     angular.forEach(self.topSection.fields, function (field) {
                         switch (field.fieldType) {
                             case 'checkbox':
-                                console.info(field.fieldType);
                                 self.filterValues[field.name] = null;
                                 self.filterComparators[field.name] = 'Equals';
                                 break;
@@ -185,7 +208,7 @@ angular.module('tantalim.desktop')
                 model: pageSection.model,
                 fields: pageSection.fields,
                 orderBy: {},
-                orderByField: function(field) {
+                orderByField: function (field) {
                     self.orderBy = {
                         field: field,
                         direction: (field === self.orderBy.field) ? !self.orderBy.direction : false
@@ -203,28 +226,50 @@ angular.module('tantalim.desktop')
                     self.bindHotKeys();
                 },
                 copy: function () {
-                    var currentSet = self.getCurrentSet();
+                    var rowsToCopy = self.getCurrentSet().rows.slice(
+                        self.selectedRows.getStart(),
+                        self.selectedRows.getEnd() + 1);
 
-                    // TODO Finish off the copy method
-                    if (currentSet.selectedRows) {
-                        $scope.clipboard = currentSet.selectedRows;
-                        //_.cloneDeep(current.gridSelection);
-                    }
+                    $scope.clipboard = [];
+                    angular.forEach(rowsToCopy, function (row) {
+                        var rowCopy = [];
+                        angular.forEach(self.fields, function (field, colIndex) {
+                            if (self.selectedColumns.between(colIndex)) {
+                                rowCopy.push(row.data[field.name]);
+                            }
+                        });
+                        $scope.clipboard.push(rowCopy);
+                    });
                 },
                 paste: function () {
-                    // TODO Finish off the paste method
-                    if ($scope.clipboard && getCurrentSet().gridSelection) {
-                        var fromRows = getRows(clipboard);
-                        var toRows = getRows(current.gridSelection);
+                    if ($scope.clipboard.length > 0) {
+                        var rowsToPaste = self.getCurrentSet().rows.slice(
+                            self.selectedRows.getStart(),
+                            self.selectedRows.getEnd() + 1);
 
-                        var counter = 0;
-                        _.forEach(toRows, function (targetRow) {
-                            if (counter >= fromRows.length) counter = 0;
-                            var fromRow = fromRows[counter];
-                            _.forEach(current.gridSelection.columns, function (yes, columnName) {
-                                targetRow.update(columnName, fromRow.data[columnName]);
+                        var rowCounter = 0,
+                            clipboardRowLength = $scope.clipboard.length,
+                            clipboardColumnLength = $scope.clipboard[0].length;
+
+                        if (clipboardColumnLength > self.selectedColumns.length()) {
+
+                        }
+                        angular.forEach(rowsToPaste, function (targetRow) {
+                            var sourceRow = $scope.clipboard[rowCounter];
+                            var colCounter = 0;
+                            angular.forEach(self.fields, function (field, colIndex) {
+                                if (self.selectedColumns.between(colIndex)) {
+                                    targetRow.update(field.name, sourceRow[colCounter]);
+                                    colCounter++;
+                                    if (clipboardColumnLength === colCounter) {
+                                        colCounter = 0;
+                                    }
+                                }
                             });
-                            counter++;
+                            rowCounter++;
+                            if (clipboardRowLength === rowCounter) {
+                                rowCounter = 0;
+                            }
                         });
                     }
                 },
@@ -239,10 +284,10 @@ angular.module('tantalim.desktop')
                 bindHotKeys: function () {
                     if (self.viewMode === VIEWMODE.TABLE) {
                         keyboardManager.bind('up', function () {
-                            self.movePreviousRow();
+                            self.moveToPreviousRow();
                         });
                         keyboardManager.bind('down', function () {
-                            self.moveNextRow();
+                            self.moveToNextRow();
                         });
                         keyboardManager.bind('right', function () {
                             self.moveNextColumn();
@@ -268,6 +313,7 @@ angular.module('tantalim.desktop')
                         keyboardManager.bind('meta+v', function () {
                             self.paste();
                         });
+                        self.stopEditing();
                     }
                     keyboardManager.bind('ctrl+t', function () {
                         self.toggleViewMode();
@@ -279,25 +325,18 @@ angular.module('tantalim.desktop')
                         self.getCurrentSet().insert();
                     });
                 },
-                selectedRows: {start: 0, end: 0},
-                selectedColumns: {start: 0, end: 0},
+                selectedRows: new Selector(),
+                selectedColumns: new Selector(),
                 cellIsSelected: function (row, column) {
-                    var between = function(value, selection) {
-                        if (selection.start > selection.end) {
-                            return selection.start >= value && selection.end <= value;
-                        } else {
-                            return selection.start <= value && selection.end >= value;
-                        }
-                    };
-                    return between(row, self.selectedRows) && between(column, self.selectedColumns);
+                    return self.selectedRows.between(row) && self.selectedColumns.between(column);
                 },
-                movePreviousRow: function () {
+                moveToPreviousRow: function () {
                     self.selectedRows.start--;
                     self.selectedRows.end = self.selectedRows.start;
                     self.selectedColumns.end = self.selectedColumns.start;
                     self.fixSelectedRows();
                 },
-                moveNextRow: function () {
+                moveToNextRow: function () {
                     self.selectedRows.start++;
                     self.selectedRows.end = self.selectedRows.start;
                     self.selectedColumns.end = self.selectedColumns.start;
@@ -308,17 +347,11 @@ angular.module('tantalim.desktop')
                         if (self.cellIsEditing(row, column)) {
                             return;
                         } else {
-                            editCell = {};
+                            editSection = null;
                         }
-                        self.selectedRows = {
-                            selecting: true,
-                            start: row,
-                            end: row
-                        };
-                        self.selectedColumns = {
-                            start: column,
-                            end: column
-                        };
+                        self.selectedRows.selecting = true;
+                        self.selectedRows.start = self.selectedRows.end = row;
+                        self.selectedColumns.start = self.selectedColumns.end = column;
                         self.mouseover(row, column);
                     }
                 },
@@ -345,18 +378,34 @@ angular.module('tantalim.desktop')
                     if (event.which !== MOUSE.LEFT) {
                         return;
                     }
+                    self.startEditing(row, column);
+                },
+                startEditing: function (row, column) {
+                    row = row || self.selectedRows.start;
+                    column = column || self.selectedColumns.start;
+
                     var currentField = self.fields[column];
-                    var currentInstance = self.getInstance(row);
-                    if (currentInstance.state !== "INSERTED" && !currentField.updateable) {
+                    // TODO We need to solve the issue when we start editing an editable field and then tab to one that's not
+                    var currentInstance = self.getCurrentSet().getInstance(row);
+                    if (!currentInstance.isFieldEditable(currentField.name)) {
+                        console.warn(currentField.name + ' is not editable');
                         return;
                     }
-                    editCell = {
-                        model: self.model.modelName,
-                        row: row,
-                        column: column
-                    };
-                    //currentFocus = self.model.modelName + "_" + "_" + column + "_" + row;
+                    editSection = self.name;
+                    keyboardManager.bind('esc', function () {
+                        self.stopEditing();
+                    });
+                    keyboardManager.bind('enter', function () {
+                    });
                 },
+                stopEditing: function () {
+                    editSection = null;
+                    keyboardManager.unbind('esc');
+                    keyboardManager.bind('enter', function () {
+                        self.startEditing();
+                    });
+                },
+
                 getSelectedRows: function () {
                     return _.slice(this.rows, this.selectedRows.start, this.selectedRows.end);
                 },
@@ -383,7 +432,7 @@ angular.module('tantalim.desktop')
                 selectDown: function () {
                     self.selectedRows.end++;
                 },
-                moveNextColumn: function() {
+                moveNextColumn: function () {
                     if (self.selectedColumns.start >= self.fields.length - 1) {
                         return;
                     }
@@ -394,7 +443,7 @@ angular.module('tantalim.desktop')
                     self.selectedColumns.end = self.selectedColumns.start;
                     self.selectedRows.end = self.selectedRows.start;
                 },
-                movePreviousColumn: function() {
+                movePreviousColumn: function () {
                     if (self.selectedColumns.start === 0) {
                         return;
                     }
@@ -403,18 +452,17 @@ angular.module('tantalim.desktop')
                     self.selectedRows.end = self.selectedRows.start;
                 },
                 cellIsEditing: function (row, column) {
-                    return editCell.model === self.model.modelName
+                    return editSection === self.name
                         && self.selectedRows.start === row
-                        && editCell.column === column;
+                        && self.selectedColumns.start === column;
                 },
-                focus: function(row, column) {
+                focus: function (row, column) {
                     if (self.cellIsEditing(row, column)) {
                         return true;
-                        //return currentFocus === self.model.modelName + "_" + column + "_" + row;
                     }
                     return false;
                 },
-                fixSelectedRows: function() {
+                fixSelectedRows: function () {
                     function constrainVariableBetween(current, low, high) {
                         if (current === undefined) return low;
                         if (current < low) return low;
@@ -423,22 +471,15 @@ angular.module('tantalim.desktop')
                     }
 
                     if (self.getCurrentSet().rows.length === 0) {
-                        self.selectedRows = {start: -1, end: -1};
+                        self.selectedRows.start = self.selectedRows.end = -1;
                     } else {
                         var maxEnd = self.getCurrentSet().rows.length - 1;
                         self.selectedRows.start = constrainVariableBetween(self.selectedRows.start, 0, maxEnd);
                         self.selectedRows.end = constrainVariableBetween(self.selectedRows.end, 0, maxEnd);
-                        //if (self.selectedRows.end < self.selectedRows.start) {
-                        //    // Swap start and end since end should always be >= start
-                        //    var temp = self.selectedRows.end;
-                        //    self.selectedRows.end = self.selectedRows.start;
-                        //    self.selectedRows.start = temp;
-                        //}
                     }
                     self.getCurrentSet().index = self.selectedRows.start;
                     ModelCursor.resetCurrents(self.getCurrentSet());
-                },
-                editCell: function() { return editCell }
+                }
             };
 
             if (!sections) {

@@ -317,6 +317,11 @@ angular.module('tantalim.common')
                             parent.updateParent();
                         }
 
+                    },
+                    isFieldEditable: function() {
+                        //.state !== "INSERTED" && !currentField.updateable
+
+                        return true;
                     }
                 };
 
