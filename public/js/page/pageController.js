@@ -1,5 +1,6 @@
 'use strict';
 /* global _ */
+/* global $ */
 /* global angular */
 
 angular.module('tantalim.desktop')
@@ -29,7 +30,7 @@ angular.module('tantalim.desktop')
                 between: function (value) {
                     return selector.getStart() <= value && value <= selector.getEnd();
                 },
-                length: function() {
+                length: function () {
                     return selector.getEnd() - selector.getStart();
                 }
             };
@@ -78,6 +79,7 @@ angular.module('tantalim.desktop')
                             self.maxPages = d.data.maxPages;
                             ModelCursor.setRoot(topModel, d.data.rows);
                             self.turnSearchOff();
+                            self.topSection.fixSelectedRows();
                             self.showLoadingScreen = false;
                         });
                 },
@@ -240,6 +242,14 @@ angular.module('tantalim.desktop')
                         });
                         $scope.clipboard.push(rowCopy);
                     });
+
+                    var clipboardToExcel = $scope.clipboard.map(function (row) {
+                        return row.join('\t');
+                    }).join('\n');
+
+                    var clipboardElement = $('#clipboard');
+                    clipboardElement.val(clipboardToExcel);
+                    clipboardElement.select();
                 },
                 paste: function () {
                     if ($scope.clipboard.length > 0) {
@@ -309,10 +319,10 @@ angular.module('tantalim.desktop')
                         });
                         keyboardManager.bind('meta+c', function () {
                             self.copy();
-                        });
+                        }, {propagate: true});
                         keyboardManager.bind('meta+v', function () {
                             self.paste();
-                        });
+                        }, {propagate: true});
                         self.stopEditing();
                     }
                     keyboardManager.bind('ctrl+t', function () {
@@ -341,6 +351,7 @@ angular.module('tantalim.desktop')
                     self.selectedRows.end = self.selectedRows.start;
                     self.selectedColumns.end = self.selectedColumns.start;
                     self.fixSelectedRows();
+                    //self.selectedRows.start
                 },
                 mousedown: function (row, column) {
                     if (event.which === MOUSE.LEFT) {
@@ -410,20 +421,11 @@ angular.module('tantalim.desktop')
                     return _.slice(this.rows, this.selectedRows.start, this.selectedRows.end);
                 },
                 delete: function () {
-                    if (this.rows.length <= 0) {
-                        return;
+                    for (var index = self.selectedRows.start; index <= self.selectedRows.end; index++) {
+                        self.getCurrentSet().delete(self.selectedRows.start);
                     }
 
-                    for (var index = this.selectedRows.start; index <= this.selectedRows.end; index++) {
-                        var row = this.rows[index];
-                        if (row.state !== 'INSERTED') {
-                            // Only delete previously saved records
-                            this.deleted.push(row);
-                            row.updateParent();
-                        }
-                    }
-                    this.rows.splice(this.selectedRows.start, 1 + this.selectedRows.end - this.selectedRows.start);
-
+                    self.selectedRows.end = self.selectedRows.start;
                     this.fixSelectedRows();
                 },
                 selectUp: function () {
@@ -496,7 +498,8 @@ angular.module('tantalim.desktop')
          * Global clipboard
          * @type {null}
          */
-        $scope.clipboard = null;
+        $scope.clipboard = [];
+        $scope.clipboardToExcel = '';
 
         function initializeSearchPage() {
             $scope.$watch('SmartPage.filterValues', function (newVal) {

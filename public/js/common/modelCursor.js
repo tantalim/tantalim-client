@@ -284,7 +284,7 @@ angular.module('tantalim.common')
                             this.deleted.push(row);
                             row.updateParent();
                         }
-                        delete this.rows[index];
+                        this.rows.splice(index, 1);
                     },
                     deleteEnabled: function() {
                         return this.getInstance() !== null;

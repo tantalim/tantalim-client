@@ -49,6 +49,15 @@ div.smart-select {
     z-index: 1;
 }
 
+#clipboard {
+    position: absolute;
+    top: -100px;
+    left: -100px;
+    height: 1px;
+    width: 1px;
+    z-index: -1;
+}
+
 #static-content {
     margin-top: 20px;
 }
@@ -105,7 +114,7 @@ table.tnt-grid td.text-display .text-edit {
     left: 0;
     height: 100%;
     width: 100%;
-    padding: 0px 4px;
+    padding: 0 4px;
     border: 1px solid rgb(143, 181, 224);
     z-index: 10;
 }
@@ -164,4 +173,10 @@ body.desktop {
 table.tnt-grid th span.glyphicon {
     float: right;
     color: #777777;
+}
+
+.no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
