@@ -131,11 +131,30 @@
                         <tnt-textbox label="Placeholder" placeholder="Fill it in..."></tnt-textbox>
                     </div>
                     <div class="form-group">
-                        <tnt-textbox label="With Help" help="Help me here!!"></tnt-textbox>
+                        <tnt-textbox label="With Help" help="do not show this">
+                            <tnt-help label="HelpField">Help <b>really</b> is here. <p>But it could get really, really, really, really, really long.</p></tnt-help>
+                        </tnt-textbox>
+                    </div>
+                    <div class="form-group">
+                        <tnt-textbox label="With Help and Links" help="do not show this">
+                            <tnt-links>
+                                <tnt-link target="Foobar" label="Help Link"></tnt-link>
+                            </tnt-links>
+                            <tnt-help>Help is here</tnt-help>
+                        </tnt-textbox>
                     </div>
                     <div class="form-group">
                         <tnt-textbox label="Disabled" current-instance="row" name="PersonName"
                                      disabled="true"></tnt-textbox>
+                    </div>
+                    <div class="form-group">
+                        <tnt-textbox label="Disabled with Help and Links" current-instance="row" name="PersonName"
+                                     disabled="true">
+                            <tnt-links>
+                                <tnt-link target="Foobar" label="Help Link"></tnt-link>
+                            </tnt-links>
+                            <tnt-help>Help is here</tnt-help>
+                        </tnt-textbox>
                     </div>
                 </div>
             </form>
@@ -161,7 +180,12 @@
                                 source-model="Titles"
                                 source-field="TitleName"
                                 target-field="Title"
-                                ></tnt-select>
+                                >
+                            <tnt-links>
+                                <tnt-link target="Foobar" label="Help Link"></tnt-link>
+                            </tnt-links>
+                            <tnt-help>Help is here</tnt-help>
+                        </tnt-select>
                     </div>
                     <div class="form-group">
                         <label class="control-label">Gender</label>

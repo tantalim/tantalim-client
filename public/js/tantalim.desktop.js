@@ -873,18 +873,33 @@ angular.module('tantalim.desktop')
     });
 
 // Source: public/js/page/ui/help.js
+angular.module('tantalim.desktop')
+    .directive('tntHelp', function () {
+        return {
+            restrict: 'E',
+            transclude: true,
+            link: function (scope, elem, attrs) {
+                scope.title = attrs.label ? 'Help for ' + attrs.label : '';
+            },
+            template: '<div class="tnt-links">' +
+            '<button class="btn btn-default btn-xs dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="true"><i class="fa fa-question"></i></button>' +
+            '<div role="menu" aria-labelledby="dropdownMenu1" class="panel panel-default dropdown-menu dropdown-menu-right">' +
+            '<div class="panel-heading" data-ng-show="title"><h3 class="panel-title">{{title}} <span class="pull-right"><i class="fa fa-question"></i></span></h3></div>' +
+            '<div class="panel-body" ng-transclude></div></div>' +
+            '</div>'
+        };
+    })
+;
 
 // Source: public/js/page/ui/link.js
 angular.module('tantalim.desktop')
     .directive('tntLinks', function () {
         return {
             restrict: 'E',
-            link: function() {
-
-            },
             transclude: true,
             template: '<div class="dropdown tnt-links">' +
-            '<button class="btn btn-default btn-xs dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="true"><i class="fa fa-link"></i></button>' +
+            '<button class="btn btn-default btn-xs dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="true">' +
+            '<span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span></button>' +
             '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu1" ng-transclude></ul></div>'
         };
     })
@@ -893,7 +908,6 @@ angular.module('tantalim.desktop')
             restrict: 'E',
             compile: function CompilingFunction() {
                 return function LinkingFunction($scope, $element, $attrs) {
-                    console.info('$attrs', $attrs);
                     //$scope.link = {
                     //    label: $attrs.label,
                     //    target: $attrs.target,
@@ -1151,7 +1165,11 @@ angular.module('tantalim.desktop')
             scope: {
                 currentInstance: '='
             },
-            template: '<label class="control-label" for="@(page.model.name)-@field.name">{{$select.label}}</label><div class="ui-select-bootstrap dropdown" ng-class="{open: $select.open}">' +
+            transclude: true,
+            template:
+            '<label class="control-label" for="@(page.model.name)-@field.name">{{$select.label}}</label>' +
+            '<span ng-transclude></span>' +
+            '<div class="ui-select-bootstrap dropdown" ng-class="{open: $select.open}">' +
             '<button type="button" class="btn btn-default dropdown-toggle form-control ui-select-match" focus-on="select-button-{{$select.id}}" data-ng-hide="$select.open" data-ng-click="$select.activate()">' +
             '<span ng-hide="$select.empty">{{$select.display}}</span><span ng-show="$select.empty" class="text-muted">Select...</span>' +
             '<i class="loading fa fa-spinner fa-spin" data-ng-show="$select.loading"></i><span class="caret"></span>' +
@@ -1210,13 +1228,12 @@ angular.module('tantalim.desktop')
                 ctrl.value = null;
                 ctrl.label = $attrs.label;
                 ctrl.placeholder = $attrs.placeholder;
-                ctrl.help = $attrs.help;
 
                 var fieldName = $attrs.name;
                 ctrl.id = fieldName;
                 ctrl.name = fieldName;
 
-                ctrl.change = function() {
+                ctrl.change = function () {
                     console.info('update' + fieldName);
                     $scope.currentInstance.update(fieldName);
                 };
@@ -1242,16 +1259,15 @@ angular.module('tantalim.desktop')
                 currentInstance: '='
             },
             transclude: true,
-            template: '<label class="control-label" for="{{$textbox.id}}">{{$textbox.label}}</label>' +
+            template: '<span ng-transclude></span>' +
+            '<label class="control-label" for="{{$textbox.id}}">{{$textbox.label}}</label>' +
             '<input type="text" class="form-control" id="{{$textbox.id}}" name="{{$textbox.name}}"' +
             'data-ng-model="currentInstance.data[$textbox.name]" ng-focus=""' +
             'ng-change="$textbox.change()"' +
             'ng-blur="$textbox.blur()"' +
             'ng-disabled="$textbox.disabled()"' +
             'ng-required="$textbox.required()"' +
-            'placeholder="{{$textbox.placeholder}}" select-on-click>' +
-            '<span data-ng-show="$textbox.help" class="help-block"><i class="fa fa-info-circle"></i> {{$textbox.help}}</span>' +
-            '<div ng-transclude style="position: relative"></div>'
+            'placeholder="{{$textbox.placeholder}}" select-on-click>'
         };
     })
     .directive('selectOnClick', function () {

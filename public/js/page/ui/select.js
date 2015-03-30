@@ -200,7 +200,11 @@ angular.module('tantalim.desktop')
             scope: {
                 currentInstance: '='
             },
-            template: '<label class="control-label" for="@(page.model.name)-@field.name">{{$select.label}}</label><div class="ui-select-bootstrap dropdown" ng-class="{open: $select.open}">' +
+            transclude: true,
+            template:
+            '<label class="control-label" for="@(page.model.name)-@field.name">{{$select.label}}</label>' +
+            '<span ng-transclude></span>' +
+            '<div class="ui-select-bootstrap dropdown" ng-class="{open: $select.open}">' +
             '<button type="button" class="btn btn-default dropdown-toggle form-control ui-select-match" focus-on="select-button-{{$select.id}}" data-ng-hide="$select.open" data-ng-click="$select.activate()">' +
             '<span ng-hide="$select.empty">{{$select.display}}</span><span ng-show="$select.empty" class="text-muted">Select...</span>' +
             '<i class="loading fa fa-spinner fa-spin" data-ng-show="$select.loading"></i><span class="caret"></span>' +

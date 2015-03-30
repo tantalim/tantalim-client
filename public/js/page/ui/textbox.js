@@ -11,13 +11,12 @@ angular.module('tantalim.desktop')
                 ctrl.value = null;
                 ctrl.label = $attrs.label;
                 ctrl.placeholder = $attrs.placeholder;
-                ctrl.help = $attrs.help;
 
                 var fieldName = $attrs.name;
                 ctrl.id = fieldName;
                 ctrl.name = fieldName;
 
-                ctrl.change = function() {
+                ctrl.change = function () {
                     console.info('update' + fieldName);
                     $scope.currentInstance.update(fieldName);
                 };
@@ -43,16 +42,15 @@ angular.module('tantalim.desktop')
                 currentInstance: '='
             },
             transclude: true,
-            template: '<label class="control-label" for="{{$textbox.id}}">{{$textbox.label}}</label>' +
+            template: '<span ng-transclude></span>' +
+            '<label class="control-label" for="{{$textbox.id}}">{{$textbox.label}}</label>' +
             '<input type="text" class="form-control" id="{{$textbox.id}}" name="{{$textbox.name}}"' +
             'data-ng-model="currentInstance.data[$textbox.name]" ng-focus=""' +
             'ng-change="$textbox.change()"' +
             'ng-blur="$textbox.blur()"' +
             'ng-disabled="$textbox.disabled()"' +
             'ng-required="$textbox.required()"' +
-            'placeholder="{{$textbox.placeholder}}" select-on-click>' +
-            '<span data-ng-show="$textbox.help" class="help-block"><i class="fa fa-info-circle"></i> {{$textbox.help}}</span>' +
-            '<div ng-transclude style="position: relative"></div>'
+            'placeholder="{{$textbox.placeholder}}" select-on-click>'
         };
     })
     .directive('selectOnClick', function () {

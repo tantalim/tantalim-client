@@ -183,10 +183,23 @@ table.tnt-grid th span.glyphicon {
 
 .form-group {
     position: relative;
+    border: 1px dotted #FFF;
+    margin: 0;
+    padding: 2px 2px 10px 2px;
+}
+
+.form-group:hover {
+    border-color: #CCC;
 }
 
 .tnt-links {
-    position: absolute;
-    top: -28px;
-    right: 6px;
+    position: relative;
+    float: right;
 }
+
+.tnt-links .panel {
+    margin: 0;
+    padding: 0;
+    min-width: 260px;
+}
+
