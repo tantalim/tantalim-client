@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Samples</title>
+    <link rel="stylesheet" href="/assets/lib/fontawesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/assets/lib/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/lib/tantalim-client/public/css/common.css">
+    <link rel="stylesheet" href="/assets/lib/tantalim-client/public/css/select.css">
+
+    <div id="3rd_party_scripts">
+        <!-- Bootstrap JS -->
+        <script type="text/javascript" src="/assets/lib/jquery/dist/jquery.js"></script>
+        <script type="text/javascript" src="/assets/lib/bootstrap/dist/js/bootstrap.js"></script>
+        <!-- Angular JS -->
+        <script type="text/javascript" src="/assets/lib/angular/angular.js"></script>
+        <!-- Angular UI -->
+        <script type="text/javascript" src="/assets/lib/angular-bootstrap/ui-bootstrap.js"></script>
+        <script type="text/javascript" src="/assets/lib/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+
+        <script type="text/javascript" src="/assets/lib/angular-ui-utils/ui-utils.js"></script>
+
+        <!-- Other JS -->
+        <script type="text/javascript" src="/assets/lib/lodash/lodash.js"></script>
+    </div>
+
+    <script type="text/javascript">angular.module('tantalim.desktop', []);</script>
+    <script type="text/javascript" src="/assets/lib/tantalim-client/public/js/tantalim.page.ui.js"></script>
+    <style>
+        body {
+            margin-bottom: 60px;
+        }
+
+        .debug {
+            border-top: 1px solid #CCC;
+            background-color: #EEEEEE;
+        }
+    </style>
+</head>
+<body ng-app="tantalim.desktop" data-ng-controller="PageController">
+<section class="container">
+    <div id="page-body">
+        <div class="page-header">
+            <h1>Samples</h1>
+        </div>
+
+        <div>
+            <h2>Sections</h2>
+
+            <tnt-section id="BuildTable" current="SmartPage.getSection('BuildTable', 0)">
+                <div class="page-header">
+                    <h1>Build Table</h1>
+                </div>
+                <tnt-table>
+
+                </tnt-table>
+                <tnt-form>
+                    <tnt-form-navigation>
+
+                    </tnt-form-navigation>
+                    <tnt-textbox label="Table Name"
+                                 current-instance="row"
+                                 name="PersonName" placeholder="Enter a table name" help="Enter the name of the table"
+                                 required="true">
+                    </tnt-textbox>
+                </tnt-form>
+
+                <tnt-section id="ChildSection1" title="Child Section" current="SmartPage.getSection('BuildTable', 0)">
+                    <title>Title2</title>
+                    <tnt-form>
+                        <tnt-form-navigation>
+
+                        </tnt-form-navigation>
+                        <tnt-textbox label="Table Name"
+                                     current-instance="row"
+                                     name="PersonName" placeholder="Enter a table name"
+                                     help="Enter the name of the table"
+                                     required="true">
+                        </tnt-textbox>
+                    </tnt-form>
+                </tnt-section>
+
+            </tnt-section>
+        </div>
+        <div>
+            <h2>Checkboxes</h2>
+
+            <form role="form" name="TopPageForm">
+                <div>
+                    <div class="form-group">
+                        <tnt-checkbox label="Required Initial True" current-instance="row" required="true"
+                                      target-field="PersonTrue"></tnt-checkbox>
+                    </div>
+                    <div class="form-group">
+                        <tnt-checkbox label="Not Required Initial False" current-instance="row" required="false"
+                                      target-field="PersonFalse"></tnt-checkbox>
+                    </div>
+                    <div class="form-group">
+                        <tnt-checkbox label="Null" current-instance="row" target-field="PersonNull"></tnt-checkbox>
+                    </div>
+                    <div class="form-group">
+                        <tnt-checkbox label="Undefined" current-instance="row"
+                                      target-field="PersonUndefined"></tnt-checkbox>
+                    </div>
+                    <div class="form-group">
+                        <tnt-checkbox label="With Help" current-instance="row" required="true" target-field="PersonTrue"
+                                      help="This is a <b>lot</b> of <i>help</i> text <a href='#here'>here.</a>"></tnt-checkbox>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div>
+            <h2>Textboxes</h2>
+
+            <form role="form" name="TopPageForm">
+                <div>
+                    <div class="form-group">
+                        <tnt-textbox label="Required Initial True" current-instance="row" required="true"
+                                     name="PersonName"></tnt-textbox>
+                    </div>
+                    <div class="form-group">
+                        <tnt-textbox label="Links">
+                            <tnt-links>
+                                <tnt-link target="Foobar" filter="FooID = ${BarID}" field="PersonName"
+                                          label="Link 1"></tnt-link>
+                                <tnt-link target="Foobar" label="Link 2"></tnt-link>
+                            </tnt-links>
+                        </tnt-textbox>
+                    </div>
+
+                    <div class="form-group">
+                        <tnt-textbox label="Placeholder" placeholder="Fill it in..."></tnt-textbox>
+                    </div>
+                    <div class="form-group">
+                        <tnt-textbox label="With Help" help="Help me here!!"></tnt-textbox>
+                    </div>
+                    <div class="form-group">
+                        <tnt-textbox label="Disabled" current-instance="row" name="PersonName"
+                                     disabled="true"></tnt-textbox>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div>
+            <h2>Selects</h2>
+
+            <form role="form" name="TopPageForm">
+                <div>
+                    <div class="form-group">
+                        <label class="control-label">Name</label>
+                        <tnt-select
+                                current-instance="row"
+                                source-model="People"
+                                source-field="PersonName"
+                                target-field="PersonName"
+                                ></tnt-select>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Title</label>
+                        <tnt-select
+                                current-instance="row"
+                                source-model="Titles"
+                                source-field="TitleName"
+                                target-field="Title"
+                                ></tnt-select>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Gender</label>
+                        <tnt-select
+                                current-instance="row"
+                                source-items="[{data:{Gender: 'Male'}},{data:{Gender: 'Female'}}]"
+                                source-field="Gender"
+                                target-field="PersonGender"
+                                ></tnt-select>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">Country</label>
+                        <tnt-select
+                                current-instance="row"
+                                source-items="[{id:'US',data:{CountryName: 'United States'}},{id:'MX',data:{CountryName: 'Mexico'}}]"
+                                source-field="CountryName"
+                                target-id="CountryCode"
+                                target-field="CountryName"
+                                ></tnt-select>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label">State/Province</label>
+                        <tnt-select
+                                current-instance="row"
+                                source-model="StateProvince"
+                                source-field="ProvinceName"
+                                source-filter="ProvinceCountryCode = '${CountryCode}'"
+                                target-id="ProvinceCode"
+                                target-field="ProvinceName"
+                                ></tnt-select>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div>
+
+        </div>
+    </div>
+</section>
+
+<script type="text/javascript">
+    angular.module('tantalim.desktop')
+            .controller('PageController',
+            function ($scope) {
+
+                var SmartNodeInstance = function (model, row) {
+                    var self = {
+                        id: row.id,
+                        data: row.data,
+                        toggle: function (fieldName, required) {
+                            var currentValue = this.data[fieldName];
+                            var newValue = true;
+                            if (currentValue === true) newValue = false;
+                            if (currentValue === false) {
+                                if (required) newValue = true;
+                                else newValue = null;
+                            }
+                            self.update(fieldName, newValue);
+                        },
+                        update: function (fieldName, newValue) {
+                            if (newValue !== undefined) {
+                                self.data[fieldName] = newValue;
+                                self.state = 'UPDATED';
+                            }
+                        },
+                        getValue: function (fieldName) {
+                            return self.data[fieldName];
+                        },
+                        state: 'NO_CHANGE'
+                    };
+                    return self;
+                };
+
+                $scope.row = new SmartNodeInstance({}, {
+                    id: 1,
+                    data: {
+                        PersonName: 'John',
+                        PersonTrue: true,
+                        PersonFalse: false,
+                        PersonNull: null
+                    }
+                });
+
+                $scope.link = function (target, filter, fieldName) {
+                    console.info('Called link with', target, filter, fieldName);
+                }
+            });
+    angular.module('tantalim.desktop')
+            .factory('PageService', function () {
+                return {
+                    readModelData: function (sourceModel, filter) {
+                        var rows = [];
+                        switch (sourceModel) {
+                            case 'People':
+                                rows = [{
+                                    id: 1,
+                                    data: {
+                                        PersonName: 'John',
+                                        Title: 'Programmer'
+                                    }
+                                }, {
+                                    id: 2,
+                                    data: {
+                                        PersonName: 'William',
+                                        Title: 'Manager'
+                                    }
+                                }];
+                                break;
+                            case 'Titles':
+                                rows = [{
+                                    id: 1,
+                                    data: {
+                                        TitleName: 'Programmer'
+                                    }
+                                }, {
+                                    id: 2,
+                                    data: {
+                                        TitleName: 'Manager'
+                                    }
+                                }];
+                                break;
+                            case 'StateProvince':
+                                console.info(filter);
+                                rows = [{
+                                    id: 'AL',
+                                    data: {
+                                        ProvinceName: 'Alabama'
+                                    }
+                                }, {
+                                    id: 'AK',
+                                    data: {
+                                        ProvinceName: 'Alaska'
+                                    }
+                                }];
+                                break;
+                            default:
+                                rows = [];
+                        }
+                        return {
+                            then: function (callback) {
+                                callback({
+                                    status: 200,
+                                    data: {
+                                        rows: rows
+                                    }
+                                });
+                            }
+                        };
+                    }
+                };
+            });
+
+</script>
+
+<div class="debug navbar navbar-fixed-bottom">
+    {{row}}
+</div>
+</body>
+</html>
