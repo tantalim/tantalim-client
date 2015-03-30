@@ -10,6 +10,7 @@ angular.module('tantalim.desktop')
                 var ctrl = this;
                 ctrl.value = null;
                 ctrl.label = $attrs.label;
+                ctrl.help = $attrs.help;
 
                 var targetField = $attrs.targetField;
                 var required = $attrs.required === 'true';
@@ -32,11 +33,13 @@ angular.module('tantalim.desktop')
                 currentInstance: '='
             },
 
-            template: '<div class="checkbox"><label class="control-label" class="ui-checkbox" for="{{$checkbox.id}}" data-ng-click="$checkbox.toggle()">' +
+            template: '<div class="checkbox"><label class="control-label no-select" class="ui-checkbox" for="{{$checkbox.id}}" data-ng-click="$checkbox.toggle()">' +
             '<i data-ng-show="$checkbox.value === true" class="fa fa-lg fa-fw fa-check-square-o"></i>' +
             '<i data-ng-show="$checkbox.value === false" class="fa fa-lg fa-fw fa-square-o"></i>' +
-            '<i data-ng-show="$checkbox.value === null" class="fa fa-lg fa-fw fa-square-o disabled"></i>' +
-            ' {{$checkbox.label}} </label></div>'
+            '<i data-ng-show="$checkbox.value === null || $checkbox.value === undefined" class="fa fa-lg fa-fw fa-square-o disabled"></i>' +
+            ' {{$checkbox.label}} </label>' +
+            '<span data-ng-show="$checkbox.help" class="help-block"><i class="fa fa-info-circle"></i> {{$checkbox.help}}</span>' +
+            '</div>'
         };
     })
 ;
@@ -60,6 +63,47 @@ angular.module('tantalim.desktop')
             }
         };
     });
+
+// Source: public/js/page/ui/help.js
+
+// Source: public/js/page/ui/link.js
+angular.module('tantalim.desktop')
+    .directive('tntLinks', function () {
+        return {
+            restrict: 'E',
+            link: function() {
+
+            },
+            transclude: true,
+            template: '<div class="dropdown tnt-links">' +
+            '<button class="btn btn-default btn-xs dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="true"><i class="fa fa-link"></i></button>' +
+            '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu1" ng-transclude></ul></div>'
+        };
+    })
+    .directive('tntLink', function ($compile) {
+        return {
+            restrict: 'E',
+            compile: function CompilingFunction() {
+                return function LinkingFunction($scope, $element, $attrs) {
+                    console.info('$attrs', $attrs);
+                    //$scope.link = {
+                    //    label: $attrs.label,
+                    //    target: $attrs.target,
+                    //    filter: $attrs.filter,
+                    //    field: $attrs.field
+                    //};
+                    var html ='<li role="presentation"><a role="menuitem" tabindex="-1" href="#" data-ng-click="link(\'' +
+                        $attrs.target + '\', \'' +
+                        ($attrs.filter || '') + '\', \'' +
+                        ($attrs.field || '') + '\')">' +
+                        $attrs.label + '</a></li>';
+                    var e = $compile(html)($scope);
+                    $element.replaceWith(e);
+                };
+            }
+        };
+    })
+;
 
 // Source: public/js/page/ui/section.js
 angular.module('tantalim.desktop')
@@ -365,6 +409,7 @@ angular.module('tantalim.desktop')
                 ctrl.name = fieldName;
 
                 ctrl.change = function() {
+                    console.info('update' + fieldName);
                     $scope.currentInstance.update(fieldName);
                 };
                 ctrl.disabled = function () {
@@ -373,38 +418,32 @@ angular.module('tantalim.desktop')
                     var notUpdateable = $attrs.updateable === 'false';
                     return $scope.state !== 'INSERTED' && notUpdateable;
                 };
-
-                //$scope.$watch('currentInstance', setValue);
+                ctrl.required = function () {
+                    if ($attrs.required === 'true') return true;
+                    return false;
+                };
+                ctrl.blur = function () {
+                    if ($attrs.blurFunction) {
+                        console.info('blur not implemented yet');
+                        //field.blurFunction
+                    }
+                };
             },
 
             scope: {
                 currentInstance: '='
             },
+            transclude: true,
             template: '<label class="control-label" for="{{$textbox.id}}">{{$textbox.label}}</label>' +
             '<input type="text" class="form-control" id="{{$textbox.id}}" name="{{$textbox.name}}"' +
             'data-ng-model="currentInstance.data[$textbox.name]" ng-focus=""' +
             'ng-change="$textbox.change()"' +
+            'ng-blur="$textbox.blur()"' +
             'ng-disabled="$textbox.disabled()"' +
+            'ng-required="$textbox.required()"' +
             'placeholder="{{$textbox.placeholder}}" select-on-click>' +
-            '<span data-ng-show="$textbox.help" class="help-block">{{$textbox.help}}</span>' +
-            '<ul><tntLink ng-repeat="member in collection" member="member"></tntLink></ul>'
-
-            /**
-             ng-change="SmartPage.getSection('@(page.name)', @depth).getCurrentSet().getInstance().update('@(field.name)')"
-             @if(field.blurFunction.isDefined) {
-                    ng-blur="@Html(field.blurFunction.get)"
-             }
-             @if(field.required) {
-                    ng-required="SmartPage.getSection('@(page.name)', @depth).getCurrentSet().getInstance()"
-             }
-             >
-             @for(link <- field.links) {
-                    <i class="fa fa-link fa-rotate-90" data-ng-click=""></i>
-                    <a href="" data-ng-click="link('@link.page.name', '@link.filter', '@page.model.name')">@link.page.title</a>
-             }
-             *
-             */
-
+            '<span data-ng-show="$textbox.help" class="help-block"><i class="fa fa-info-circle"></i> {{$textbox.help}}</span>' +
+            '<div ng-transclude style="position: relative"></div>'
         };
     })
     .directive('selectOnClick', function () {
@@ -415,12 +454,6 @@ angular.module('tantalim.desktop')
                     this.select();
                 });
             }
-        };
-    })
-    .directive('tntLink', function () {
-        return {
-            restrict: 'E',
-            template: 'asdf'
         };
     })
 ;

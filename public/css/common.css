@@ -180,3 +180,13 @@ table.tnt-grid th span.glyphicon {
     -moz-user-select: none;
     -ms-user-select: none;
 }
+
+.form-group {
+    position: relative;
+}
+
+.tnt-links {
+    position: absolute;
+    top: -28px;
+    right: 6px;
+}
