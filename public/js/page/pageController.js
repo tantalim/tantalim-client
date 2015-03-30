@@ -104,7 +104,7 @@ angular.module('tantalim.desktop')
                     self.current = section;
                     section.bindHotKeys();
                 },
-                bind: function () {
+                bindHotKeys: function () {
                     keyboardManager.bind('ctrl+s', function () {
                         self.save();
                     });
@@ -222,6 +222,7 @@ angular.module('tantalim.desktop')
                         self.viewMode = VIEWMODE.TABLE;
                     } else {
                         self.selectedRows.end = self.selectedRows.start;
+                        self.stopEditing();
                         self.viewMode = VIEWMODE.FORM;
                     }
                     self.unbindHotKeys();
@@ -261,9 +262,6 @@ angular.module('tantalim.desktop')
                             clipboardRowLength = $scope.clipboard.length,
                             clipboardColumnLength = $scope.clipboard[0].length;
 
-                        if (clipboardColumnLength > self.selectedColumns.length()) {
-
-                        }
                         angular.forEach(rowsToPaste, function (targetRow) {
                             var sourceRow = $scope.clipboard[rowCounter];
                             var colCounter = 0;
@@ -287,11 +285,20 @@ angular.module('tantalim.desktop')
                     return ModelCursor.getCurrentSet(self.model.name);
                 },
                 unbindHotKeys: function () {
-                    _.forEach(keyboardManager.keyboardEvent, function (key, value) {
-                        keyboardManager.unbind(value);
+                    self.bound = false;
+                    var ctrl = 'meta';
+                    var sectionKeys = ['up','down','right','left','shift+tab','shift+down',ctrl + '+c',ctrl + '+v',ctrl + '+t',ctrl + '+d',ctrl + '+i'];
+                    angular.forEach(sectionKeys, function (key) {
+                        keyboardManager.unbind(key);
                     });
                 },
                 bindHotKeys: function () {
+                    if (self.bound) {
+                        return;
+                    }
+                    self.bound = true;
+                    // TODO detect if this is windows or mac
+                    var ctrl = 'meta';
                     if (self.viewMode === VIEWMODE.TABLE) {
                         keyboardManager.bind('up', function () {
                             self.moveToPreviousRow();
@@ -317,22 +324,21 @@ angular.module('tantalim.desktop')
                         keyboardManager.bind('shift+down', function () {
                             self.selectDown();
                         });
-                        keyboardManager.bind('meta+c', function () {
+                        keyboardManager.bind(ctrl + '+c', function () {
                             self.copy();
                         }, {propagate: true});
-                        keyboardManager.bind('meta+v', function () {
+                        keyboardManager.bind(ctrl + '+v', function () {
                             self.paste();
                         }, {propagate: true});
-                        self.stopEditing();
                     }
                     keyboardManager.bind('ctrl+t', function () {
                         self.toggleViewMode();
                     });
-                    keyboardManager.bind('ctrl+d', function () {
-                        self.getCurrentSet().delete();
+                    keyboardManager.bind(ctrl + '+d', function () {
+                        self.delete();
                     });
-                    keyboardManager.bind('ctrl+n', function () {
-                        self.getCurrentSet().insert();
+                    keyboardManager.bind(ctrl + '+i', function () {
+                        self.insert();
                     });
                 },
                 selectedRows: new Selector(),
@@ -351,7 +357,6 @@ angular.module('tantalim.desktop')
                     self.selectedRows.end = self.selectedRows.start;
                     self.selectedColumns.end = self.selectedColumns.start;
                     self.fixSelectedRows();
-                    //self.selectedRows.start
                 },
                 mousedown: function (row, column) {
                     if (event.which === MOUSE.LEFT) {
@@ -408,6 +413,7 @@ angular.module('tantalim.desktop')
                     });
                     keyboardManager.bind('enter', function () {
                     });
+                    self.unbindHotKeys();
                 },
                 stopEditing: function () {
                     editSection = null;
@@ -415,10 +421,16 @@ angular.module('tantalim.desktop')
                     keyboardManager.bind('enter', function () {
                         self.startEditing();
                     });
+                    self.bindHotKeys();
                 },
 
                 getSelectedRows: function () {
                     return _.slice(this.rows, this.selectedRows.start, this.selectedRows.end);
+                },
+                insert: function () {
+                    self.getCurrentSet().insert();
+                    self.selectedRows.start = self.selectedRows.end = self.getCurrentSet().index;
+                    self.fixSelectedRows();
                 },
                 delete: function () {
                     for (var index = self.selectedRows.start; index <= self.selectedRows.end; index++) {
@@ -426,7 +438,7 @@ angular.module('tantalim.desktop')
                     }
 
                     self.selectedRows.end = self.selectedRows.start;
-                    this.fixSelectedRows();
+                    self.fixSelectedRows();
                 },
                 selectUp: function () {
                     self.selectedRows.end--;
@@ -435,7 +447,7 @@ angular.module('tantalim.desktop')
                     self.selectedRows.end++;
                 },
                 moveNextColumn: function () {
-                    if (self.selectedColumns.start >= self.fields.length - 1) {
+                    if (self.selectedColumns.start >= (self.fields.length - 1)) {
                         return;
                     }
                     if (!self.selectedColumns) {
@@ -454,9 +466,9 @@ angular.module('tantalim.desktop')
                     self.selectedRows.end = self.selectedRows.start;
                 },
                 cellIsEditing: function (row, column) {
-                    return editSection === self.name
-                        && self.selectedRows.start === row
-                        && self.selectedColumns.start === column;
+                    return editSection === self.name &&
+                        self.selectedRows.start === row &&
+                        self.selectedColumns.start === column;
                 },
                 focus: function (row, column) {
                     if (self.cellIsEditing(row, column)) {
@@ -472,6 +484,7 @@ angular.module('tantalim.desktop')
                         return current;
                     }
 
+                    console.info('fixSelectedRows ', self.name);
                     if (self.getCurrentSet().rows.length === 0) {
                         self.selectedRows.start = self.selectedRows.end = -1;
                     } else {
@@ -529,15 +542,19 @@ angular.module('tantalim.desktop')
             setFilterString($scope.SmartPage.filterValues, $scope.SmartPage.filterComparators);
         }
 
-        $scope.link = function (targetPage, filter, modelName) {
-            var data = ModelCursor.getCurrentSet(modelName, 0).getSelectedRows();
-            _.forEach(data.data, function (value, key) {
-                filter = filter.replace('[' + key + ']', data.data[key]);
+
+        $scope.link = function (targetPage, filter, sectionName) {
+            var row = page.getSection(sectionName).getCurrentSet().getInstance();
+            _.forEach(row.data, function (value, key) {
+                // Should drop support for [] in favor of ${} most likely
+                filter = filter.replace('[' + key + ']', row.data[key]);
+                filter = filter.replace('${' + key + '}', row.data[key]);
             });
             $window.location.href = '/page/' + targetPage + '/?filter=' + filter;
         };
 
         var page = new SmartPage(PageDefinition.page);
+        page.bindHotKeys();
         $scope.SmartPage = page;
         initializeSearchPage();
         $scope.Logger = Logger;

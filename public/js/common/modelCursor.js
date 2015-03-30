@@ -291,7 +291,11 @@ angular.module('tantalim.common')
                     },
                     getInstance: function (index) {
                         if (!this.rows || this.rows.length === 0) {
+                            this.index = -1;
                             return null;
+                        }
+                        if (this.index < 0) {
+                            this.index = 0;
                         }
                         index = index || this.index || 0;
                         return this.rows[index];
