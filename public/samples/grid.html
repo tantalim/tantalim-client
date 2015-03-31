@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Samples</title>
+    <link rel="stylesheet" href="/assets/lib/fontawesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/assets/lib/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/lib/tantalim-client/public/css/common.css">
+    <link rel="stylesheet" href="/assets/lib/tantalim-client/public/css/select.css">
+
+    <div id="3rd_party_scripts">
+        <!-- Bootstrap JS -->
+        <script type="text/javascript" src="/assets/lib/jquery/dist/jquery.js"></script>
+        <script type="text/javascript" src="/assets/lib/bootstrap/dist/js/bootstrap.js"></script>
+        <!-- Angular JS -->
+        <script type="text/javascript" src="/assets/lib/angular/angular.js"></script>
+        <!-- Angular UI -->
+        <script type="text/javascript" src="/assets/lib/angular-bootstrap/ui-bootstrap.js"></script>
+        <script type="text/javascript" src="/assets/lib/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+
+        <script type="text/javascript" src="/assets/lib/angular-ui-utils/ui-utils.js"></script>
+
+        <!-- Other JS -->
+        <script type="text/javascript" src="/assets/lib/lodash/lodash.js"></script>
+    </div>
+
+    <script type="text/javascript">angular.module('tantalim.desktop', []);</script>
+    <script type="text/javascript" src="/assets/lib/tantalim-client/public/js/tantalim.page.ui.js"></script>
+    <style>
+        body {
+            margin-bottom: 60px;
+        }
+
+        .debug {
+            border-top: 1px solid #CCC;
+            background-color: #EEEEEE;
+        }
+    </style>
+</head>
+<body ng-app="tantalim.desktop" data-ng-controller="PageController">
+<section class="container">
+    <div id="page-body">
+        <div class="page-header">
+            <h1>Sample Grid</h1>
+        </div>
+
+        <div class="table-responsive no-select">
+            <table class="tnt-grid table table-bordered" ng-mouseleave="section.mouseover(-1, -1)">
+                <thead>
+                <tr>
+                    <th class="tnt-grid-corner"></th>
+                    <th class="text-center"
+                        width="40%"
+                        data-ng-mouseenter="section.mouseover(-1, 0)">
+                        PersonName
+                        <span class="glyphicon" aria-hidden="true"
+                              data-ng-click="section.orderByField('PersonName')"
+                              ng-class="{'glyphicon-chevron-down': section.orderBy.direction, 'glyphicon-chevron-up': !section.orderBy.direction}"
+                              data-ng-show="section.orderBy.field === 'PersonName'"></span>
+                        <span data-ng-show="section.isHoveredOverCell(-1, 0)" class="help">
+                            <tnt-help>Help is here</tnt-help>
+                        </span>
+                    </th>
+                    <th class="text-center"
+                        width="20%"
+                        data-ng-mouseenter="section.mouseover(-1, 1)"
+                        data-ng-click="section.orderByField('PersonAge')">
+                        PersonAge
+                        <span class="glyphicon" aria-hidden="true"
+                              ng-class="{'glyphicon-chevron-down': section.orderBy.direction, 'glyphicon-chevron-up': !section.orderBy.direction}"
+                              data-ng-show="section.orderBy.field === 'PersonAge'"></span>
+                    </th>
+                    <th class="text-center"
+                        width="40%"
+                        data-ng-mouseenter="section.mouseover(-1, 2)"
+                        data-ng-click="section.orderByField('PersonGenderMeaning')">
+                        PersonGenderMeaning
+                        <span class="glyphicon" aria-hidden="true"
+                              ng-class="{'glyphicon-chevron-down': section.orderBy.direction, 'glyphicon-chevron-up': !section.orderBy.direction}"
+                              data-ng-show="section.orderBy.field === 'PersonGenderMeaning'"></span>
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr data-ng-repeat="row in rows">
+                    <td class="tnt-grid-left-nav ng-binding" data-ng-bind="$index + 1"></td>
+                    <td class="text-display"
+                        data-ng-class="{success: section.cellIsSelected($index, 0)}"
+                        data-ng-mousedown="section.mousedown($index, 0)"
+                        data-ng-mouseenter="section.mouseover($index, 0)"
+                        data-ng-mouseup="section.mouseup($index, 0)"
+                        data-ng-dblclick="section.dblclick($index, 0)"
+                            >
+                        <span data-ng-show="section.isHoveredOverCell($index, 0)" style="float: right; margin: -1px;">
+                            <button class="btn btn-default btn-xs">
+                                <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
+                            </button>
+                            <tnt-links>
+                                <tnt-link target="Foobar" label="Manage Employees"></tnt-link>
+                                <tnt-link target="Foobar" label="Job History"></tnt-link>
+                            </tnt-links>
+                        </span>
+                        <span class="text-view" data-ng-bind="row.data.PersonName"></span>
+                        <input type="text" class="text-edit" data-ng-model="row.data.PersonName"
+                               data-ng-show="section.cellIsEditing($index, 0)"
+                               data-ng-change="row.update('PersonName')"
+                               focus-me="section.focus($index, 0)">
+                    </td>
+                    <td class="text-display"
+                        data-ng-class="{success: section.cellIsSelected($index, 1)}"
+                        data-ng-mousedown="section.mousedown($index, 1)"
+                        data-ng-mouseenter="section.mouseover($index, 1)"
+                        data-ng-mouseup="section.mouseup($index, 1)"
+                        data-ng-dblclick="section.dblclick($index, 1)"
+                            >
+                        <span data-ng-show="section.isHoveredOverCell($index, 1)" style="float: right; margin: -1px;">
+                            <button class="btn btn-default btn-xs">
+                                <span class="glyphicon glyphicon-pencil" aria-hidden="true" data-ng-click="section.startEditing($index, 1)"></span>
+                            </button>
+                        </span>
+                        <span class="text-view" data-ng-bind="row.data.PersonAge"></span>
+                        <input type="text" class="text-edit" data-ng-model="row.data.PersonAge"
+                               data-ng-show="section.cellIsEditing($index, 1)"
+                               data-ng-change="row.update('PersonAge')"
+                               focus-me="section.focus($index, 1)">
+                    </td>
+                    <td class="text-display"
+                        data-ng-class="{success: section.cellIsSelected($index, 2)}"
+                        data-ng-mousedown="section.mousedown($index, 2)"
+                        data-ng-mouseenter="section.mouseover($index, 2)"
+                        data-ng-mouseup="section.mouseup($index, 2)"
+                        data-ng-dblclick="section.dblclick($index, 2)"
+                            >
+                        <span data-ng-show="section.isHoveredOverCell($index, 2)" style="float: right; margin: -1px;">
+                            <button class="btn btn-default btn-xs">
+                                <span class="glyphicon glyphicon-pencil" aria-hidden="true" data-ng-click="section.startEditing($index, 1)"></span>
+                            </button>
+                        </span>
+                        <span class="text-view" data-ng-bind="row.data.PersonGender"></span>
+                        <input type="text" class="text-edit" data-ng-model="row.data.PersonGender"
+                               data-ng-show="section.cellIsEditing($index, 2)"
+                               data-ng-change="row.update('PersonGender')"
+                               focus-me="section.focus($index, 2)">
+                    </td>
+
+                </tr>
+                <tr data-ng-hide="rows.length">
+                    <td>-</td>
+                    <td colspan="1">No Data Found</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<script type="text/javascript">
+    angular.module('tantalim.desktop')
+            .controller('PageController',
+            function ($scope, $filter) {
+
+                var editSection = null;
+
+                var MOUSE = {
+                    LEFT: 1,
+                    RIGHT: 3
+                };
+
+                var Selector = function () {
+                    var selector = {
+                        start: 0,
+                        end: 0,
+                        getStart: function () {
+                            return selector.start < selector.end ? selector.start : selector.end;
+                        },
+                        getEnd: function () {
+                            return selector.start < selector.end ? selector.end : selector.start;
+                        },
+                        between: function (value) {
+                            return selector.getStart() <= value && value <= selector.getEnd();
+                        },
+                        length: function () {
+                            return selector.getEnd() - selector.getStart();
+                        }
+                    };
+                    return selector;
+                };
+
+                var SmartSection = function () {
+                    var self = {
+                        orderBy: {},
+                        orderByField: function (field) {
+                            self.orderBy = {
+                                field: field,
+                                direction: (field === self.orderBy.field) ? !self.orderBy.direction : false
+                            };
+                            $scope.rows = $filter('orderBy')($scope.rows, 'data.' + self.orderBy.field, self.orderBy.direction);
+                        },
+                        selectedRows: new Selector(),
+                        selectedColumns: new Selector(),
+                        hover: {},
+                        cellIsSelected: function (row, column) {
+                            return self.selectedRows.between(row) && self.selectedColumns.between(column);
+                        },
+                        mousedown: function (row, column) {
+                            if (event.which === MOUSE.LEFT) {
+                                if (self.cellIsEditing(row, column)) {
+                                    return;
+                                } else {
+                                    editSection = null;
+                                }
+                                self.selectedRows.selecting = true;
+                                self.selectedRows.start = self.selectedRows.end = row;
+                                self.selectedColumns.start = self.selectedColumns.end = column;
+                                self.mouseover(row, column);
+                            }
+                        },
+                        mouseover: function (row, column) {
+                            self.hover = {
+                                row: row,
+                                column: column
+                            };
+
+                            if (event.which === MOUSE.LEFT) {
+                                if (self.cellIsEditing(row, column)) {
+                                    return;
+                                }
+                                if (self.selectedRows.selecting) {
+                                    self.selectedRows.end = row;
+                                    self.selectedColumns.end = column;
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                }
+                            }
+                        },
+                        isHoveredOverCell: function (row, column) {
+                          return self.hover.row === row && self.hover.column === column;
+                        },
+                        mouseup: function () {
+                            if (event.which === MOUSE.LEFT) {
+                                self.selectedRows.selecting = false;
+                                self.fixSelectedRows();
+                            }
+                        },
+                        dblclick: function (row, column) {
+                            if (event.which !== MOUSE.LEFT) {
+                                return;
+                            }
+                            self.startEditing(row, column);
+                        },
+                        startEditing: function (row, column) {
+                            row = row || self.selectedRows.start;
+                            column = column || self.selectedColumns.start;
+                            self.editing = true;
+                        },
+                        stopEditing: function () {
+                            self.editing = false;
+                        },
+                        editing: false,
+                        cellIsEditing: function (row, column) {
+                            if (self.editing) {
+                                return row === self.selectedRows.start && column === self.selectedColumns.start;
+                            }
+                            return false;
+                        },
+                        focus: function (row, column) {
+
+                        },
+                        fixSelectedRows: function () {
+                            function constrainVariableBetween(current, low, high) {
+                                if (current === undefined) return low;
+                                if (current < low) return low;
+                                if (current > high) return high;
+                                return current;
+                            }
+
+                            if ($scope.rows.length === 0) {
+                                self.selectedRows.start = self.selectedRows.end = -1;
+                            } else {
+                                var maxEnd = $scope.rows.length - 1;
+                                self.selectedRows.start = constrainVariableBetween(self.selectedRows.start, 0, maxEnd);
+                                self.selectedRows.end = constrainVariableBetween(self.selectedRows.end, 0, maxEnd);
+                            }
+                        }
+                    };
+                    return self;
+                };
+
+                $scope.section = new SmartSection();
+
+                var SmartNodeInstance = function (model, row) {
+                    var self = {
+                        id: row.id,
+                        data: row.data,
+                        toggle: function (fieldName, required) {
+                            var currentValue = this.data[fieldName];
+                            var newValue = true;
+                            if (currentValue === true) newValue = false;
+                            if (currentValue === false) {
+                                if (required) newValue = true;
+                                else newValue = null;
+                            }
+                            self.update(fieldName, newValue);
+                        },
+                        update: function (fieldName, newValue) {
+                            if (newValue !== undefined) {
+                                self.data[fieldName] = newValue;
+                                self.state = 'UPDATED';
+                            }
+                        },
+                        getValue: function (fieldName) {
+                            return self.data[fieldName];
+                        },
+                        state: 'NO_CHANGE'
+                    };
+                    return self;
+                };
+
+                $scope.rows = [];
+                for (var i = 0; i < 10; i++) {
+                    var row = new SmartNodeInstance({}, {
+                        id: 1,
+                        data: {
+                            PersonName: 'John ' + i,
+                            PersonAge: i,
+                            PersonGender: 'M',
+                            PersonGenderMeaning: 'Male',
+                            PersonTrue: true,
+                            PersonNull: null
+                        }
+                    });
+                    $scope.rows.push(row);
+                }
+
+                $scope.link = function (target, filter, fieldName) {
+                    console.info('Called link with', target, filter, fieldName);
+                }
+            });
+    angular.module('tantalim.desktop')
+            .factory('PageService', function () {
+                return {
+                    readModelData: function (sourceModel, filter) {
+                        var rows = [];
+                        switch (sourceModel) {
+                            case 'People':
+                                rows = [{
+                                    id: 1,
+                                    data: {
+                                        PersonName: 'John',
+                                        Title: 'Programmer'
+                                    }
+                                }, {
+                                    id: 2,
+                                    data: {
+                                        PersonName: 'William',
+                                        Title: 'Manager'
+                                    }
+                                }];
+                                break;
+                            case 'Titles':
+                                rows = [{
+                                    id: 1,
+                                    data: {
+                                        TitleName: 'Programmer'
+                                    }
+                                }, {
+                                    id: 2,
+                                    data: {
+                                        TitleName: 'Manager'
+                                    }
+                                }];
+                                break;
+                            case 'StateProvince':
+                                console.info(filter);
+                                rows = [{
+                                    id: 'AL',
+                                    data: {
+                                        ProvinceName: 'Alabama'
+                                    }
+                                }, {
+                                    id: 'AK',
+                                    data: {
+                                        ProvinceName: 'Alaska'
+                                    }
+                                }];
+                                break;
+                            default:
+                                rows = [];
+                        }
+                        return {
+                            then: function (callback) {
+                                callback({
+                                    status: 200,
+                                    data: {
+                                        rows: rows
+                                    }
+                                });
+                            }
+                        };
+                    }
+                };
+            });
+
+</script>
+
+<div class="debug navbar navbar-fixed-bottom">
+    {{rows}}
+</div>
+</body>
+</html>

@@ -24,8 +24,8 @@ angular.module('tantalim.desktop')
                     //};
                     var html ='<li role="presentation"><a role="menuitem" tabindex="-1" href="#" data-ng-click="link(\'' +
                         $attrs.target + '\', \'' +
-                        ($attrs.filter || '') + '\', \'' +
-                        ($attrs.field || '') + '\')">' +
+                        ($attrs.filter.replace(/'/g, '\\\'').replace(/"/g, '\\\'') || '') + '\', \'' +
+                        ($attrs.section || '') + '\')">' +
                         $attrs.label + '</a></li>';
                     var e = $compile(html)($scope);
                     $element.replaceWith(e);

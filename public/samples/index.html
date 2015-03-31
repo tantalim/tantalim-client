@@ -102,8 +102,9 @@
                                       target-field="PersonUndefined"></tnt-checkbox>
                     </div>
                     <div class="form-group">
-                        <tnt-checkbox label="With Help" current-instance="row" required="true" target-field="PersonTrue"
-                                      help="This is a <b>lot</b> of <i>help</i> text <a href='#here'>here.</a>"></tnt-checkbox>
+                        <tnt-checkbox label="With Help" current-instance="row" required="true" target-field="PersonTrue">
+                            <tnt-help label="HelpField">Help <b>really</b> is here. <p>But it could get really, really, really, really, really long.</p></tnt-help>
+                        </tnt-checkbox>
                     </div>
                 </div>
             </form>

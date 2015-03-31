@@ -580,6 +580,7 @@ angular.module('tantalim.desktop')
                 },
                 selectedRows: new Selector(),
                 selectedColumns: new Selector(),
+                hover: {},
                 cellIsSelected: function (row, column) {
                     return self.selectedRows.between(row) && self.selectedColumns.between(column);
                 },
@@ -609,6 +610,11 @@ angular.module('tantalim.desktop')
                     }
                 },
                 mouseover: function (row, column) {
+                    self.hover = {
+                        row: row,
+                        column: column
+                    };
+
                     if (event.which === MOUSE.LEFT) {
                         if (self.cellIsEditing(row, column)) {
                             return;
@@ -620,6 +626,9 @@ angular.module('tantalim.desktop')
                             event.stopPropagation();
                         }
                     }
+                },
+                isHoveredOverCell: function (row, column) {
+                    return self.hover.row === row && self.hover.column === column;
                 },
                 mouseup: function () {
                     if (event.which === MOUSE.LEFT) {
@@ -665,6 +674,7 @@ angular.module('tantalim.desktop')
                     return _.slice(this.rows, this.selectedRows.start, this.selectedRows.end);
                 },
                 insert: function () {
+                    console.info('insert');
                     self.getCurrentSet().insert();
                     self.selectedRows.start = self.selectedRows.end = self.getCurrentSet().index;
                     self.fixSelectedRows();
@@ -841,7 +851,9 @@ angular.module('tantalim.desktop')
                 currentInstance: '='
             },
 
-            template: '<div class="checkbox"><label class="control-label no-select" class="ui-checkbox" for="{{$checkbox.id}}" data-ng-click="$checkbox.toggle()">' +
+            transclude: true,
+            template: '<div class="checkbox"><span ng-transclude></span>' +
+            '<label class="control-label no-select" class="ui-checkbox" for="{{$checkbox.id}}" data-ng-click="$checkbox.toggle()">' +
             '<i data-ng-show="$checkbox.value === true" class="fa fa-lg fa-fw fa-check-square-o"></i>' +
             '<i data-ng-show="$checkbox.value === false" class="fa fa-lg fa-fw fa-square-o"></i>' +
             '<i data-ng-show="$checkbox.value === null || $checkbox.value === undefined" class="fa fa-lg fa-fw fa-square-o disabled"></i>' +
@@ -916,8 +928,8 @@ angular.module('tantalim.desktop')
                     //};
                     var html ='<li role="presentation"><a role="menuitem" tabindex="-1" href="#" data-ng-click="link(\'' +
                         $attrs.target + '\', \'' +
-                        ($attrs.filter || '') + '\', \'' +
-                        ($attrs.field || '') + '\')">' +
+                        ($attrs.filter.replace(/'/g, '\\\'').replace(/"/g, '\\\'') || '') + '\', \'' +
+                        ($attrs.section || '') + '\')">' +
                         $attrs.label + '</a></li>';
                     var e = $compile(html)($scope);
                     $element.replaceWith(e);

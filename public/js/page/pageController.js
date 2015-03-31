@@ -343,6 +343,7 @@ angular.module('tantalim.desktop')
                 },
                 selectedRows: new Selector(),
                 selectedColumns: new Selector(),
+                hover: {},
                 cellIsSelected: function (row, column) {
                     return self.selectedRows.between(row) && self.selectedColumns.between(column);
                 },
@@ -372,6 +373,11 @@ angular.module('tantalim.desktop')
                     }
                 },
                 mouseover: function (row, column) {
+                    self.hover = {
+                        row: row,
+                        column: column
+                    };
+
                     if (event.which === MOUSE.LEFT) {
                         if (self.cellIsEditing(row, column)) {
                             return;
@@ -383,6 +389,9 @@ angular.module('tantalim.desktop')
                             event.stopPropagation();
                         }
                     }
+                },
+                isHoveredOverCell: function (row, column) {
+                    return self.hover.row === row && self.hover.column === column;
                 },
                 mouseup: function () {
                     if (event.which === MOUSE.LEFT) {
@@ -428,6 +437,7 @@ angular.module('tantalim.desktop')
                     return _.slice(this.rows, this.selectedRows.start, this.selectedRows.end);
                 },
                 insert: function () {
+                    console.info('insert');
                     self.getCurrentSet().insert();
                     self.selectedRows.start = self.selectedRows.end = self.getCurrentSet().index;
                     self.fixSelectedRows();

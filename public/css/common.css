@@ -135,6 +135,7 @@ table.tnt-grid tr th {
     cursor: pointer;
     background-color: #EEEEEE;
     padding: 4px;
+    position: relative;
 }
 
 table.tnt-grid tr td {
@@ -171,8 +172,13 @@ body.desktop {
 }
 
 table.tnt-grid th span.glyphicon {
-    float: right;
     color: #777777;
+    position: relative;
+    float: right;
+}
+
+table.tnt-grid th .help {
+    position: absolute;
 }
 
 .no-select {

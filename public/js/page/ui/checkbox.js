@@ -33,7 +33,9 @@ angular.module('tantalim.desktop')
                 currentInstance: '='
             },
 
-            template: '<div class="checkbox"><label class="control-label no-select" class="ui-checkbox" for="{{$checkbox.id}}" data-ng-click="$checkbox.toggle()">' +
+            transclude: true,
+            template: '<div class="checkbox"><span ng-transclude></span>' +
+            '<label class="control-label no-select" class="ui-checkbox" for="{{$checkbox.id}}" data-ng-click="$checkbox.toggle()">' +
             '<i data-ng-show="$checkbox.value === true" class="fa fa-lg fa-fw fa-check-square-o"></i>' +
             '<i data-ng-show="$checkbox.value === false" class="fa fa-lg fa-fw fa-square-o"></i>' +
             '<i data-ng-show="$checkbox.value === null || $checkbox.value === undefined" class="fa fa-lg fa-fw fa-square-o disabled"></i>' +
