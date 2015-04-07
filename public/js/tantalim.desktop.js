@@ -588,6 +588,12 @@ angular.module('tantalim.desktop')
                 selectedRows: new Selector(),
                 selectedColumns: new Selector(),
                 hover: {},
+                selectRow: function(row) {
+                    self.selectedRows.start = self.selectedRows.end = row;
+                },
+                rowIsSelected: function (row) {
+                    return self.selectedRows.between(row);
+                },
                 cellIsSelected: function (row, column) {
                     return self.selectedRows.between(row) && self.selectedColumns.between(column);
                 },
