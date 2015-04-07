@@ -5,7 +5,10 @@
 
 angular.module('tantalim.desktop')
     .controller('PageController',
-    function ($scope, $log, $location, PageDefinition, PageService, ModelCursor, keyboardManager, ModelSaver, $window, Logger) {
+    function ($scope, $log, $location, PageDefinition, PageService, ModelCursor, keyboardManager, ModelSaver, $window, $http, Logger) {
+
+        $scope.buttons = $window.buttons;
+        $scope.$http = $http;
 
         /**
          * You can only edit a single cell in a single section at a time so this is a global var (page level at least)
@@ -62,26 +65,30 @@ angular.module('tantalim.desktop')
                     Logger.info('Loading data...');
                     Logger.error('');
 
+                    function processResults(d) {
+                        Logger.info('');
+                        if (d.status !== 200) {
+                            Logger.error('Failed to reach server. Try refreshing.');
+                            self.loadingFailed = true;
+                            return;
+                        }
+                        if (d.data.error) {
+                            Logger.error('Error reading data from server: ' + d.data.error.message);
+                            self.loadingFailed = true;
+                            return;
+                        }
+                        self.maxPages = d.data.maxPages;
+                        ModelCursor.setRoot(topModel, d.data.rows);
+                        self.turnSearchOff();
+                        self.topSection.fixSelectedRows();
+                        self.showLoadingScreen = false;
+                    }
                     var topModel = self.topSection.model;
-                    PageService.readModelData(topModel.name, self.filter(), self.page())
-                        .then(function (d) {
-                            Logger.info('');
-                            if (d.status !== 200) {
-                                Logger.error('Failed to reach server. Try refreshing.');
-                                self.loadingFailed = true;
-                                return;
-                            }
-                            if (d.data.error) {
-                                Logger.error('Error reading data from server: ' + d.data.error.message);
-                                self.loadingFailed = true;
-                                return;
-                            }
-                            self.maxPages = d.data.maxPages;
-                            ModelCursor.setRoot(topModel, d.data.rows);
-                            self.turnSearchOff();
-                            self.topSection.fixSelectedRows();
-                            self.showLoadingScreen = false;
-                        });
+                    if (topModel.customUrlSource) {
+                        PageService.readUrl(topModel.customUrlSource).then(processResults);
+                    } else {
+                        PageService.readModelData(topModel.name, self.filter(), self.page()).then(processResults);
+                    }
                 },
 
                 refresh: function () {
@@ -378,16 +385,14 @@ angular.module('tantalim.desktop')
                         column: column
                     };
 
-                    if (event.which === MOUSE.LEFT) {
-                        if (self.cellIsEditing(row, column)) {
-                            return;
-                        }
-                        if (self.selectedRows.selecting) {
-                            self.selectedRows.end = row;
-                            self.selectedColumns.end = column;
-                            event.preventDefault();
-                            event.stopPropagation();
-                        }
+                    if (self.cellIsEditing(row, column)) {
+                        return;
+                    }
+                    if (self.selectedRows.selecting) {
+                        self.selectedRows.end = row;
+                        self.selectedColumns.end = column;
+                        event.preventDefault();
+                        event.stopPropagation();
                     }
                 },
                 isHoveredOverCell: function (row, column) {
@@ -434,10 +439,9 @@ angular.module('tantalim.desktop')
                 },
 
                 getSelectedRows: function () {
-                    return _.slice(this.rows, this.selectedRows.start, this.selectedRows.end);
+                    return _.slice(self.getCurrentSet().rows, self.selectedRows.start, self.selectedRows.end + 1);
                 },
                 insert: function () {
-                    console.info('insert');
                     self.getCurrentSet().insert();
                     self.selectedRows.start = self.selectedRows.end = self.getCurrentSet().index;
                     self.fixSelectedRows();
@@ -494,7 +498,6 @@ angular.module('tantalim.desktop')
                         return current;
                     }
 
-                    console.info('fixSelectedRows ', self.name);
                     if (self.getCurrentSet().rows.length === 0) {
                         self.selectedRows.start = self.selectedRows.end = -1;
                     } else {
@@ -509,6 +512,9 @@ angular.module('tantalim.desktop')
 
             if (!sections) {
                 sections = {};
+            }
+            if (sections[self.name]) {
+                console.warn('Duplicate section named ' + self.name);
             }
             sections[self.name] = self;
 
@@ -552,9 +558,9 @@ angular.module('tantalim.desktop')
             setFilterString($scope.SmartPage.filterValues, $scope.SmartPage.filterComparators);
         }
 
-
         $scope.link = function (targetPage, filter, sectionName) {
             var row = page.getSection(sectionName).getCurrentSet().getInstance();
+            // TODO link from all selected rows (getSelectedRows)
             _.forEach(row.data, function (value, key) {
                 // Should drop support for [] in favor of ${} most likely
                 filter = filter.replace('[' + key + ']', row.data[key]);

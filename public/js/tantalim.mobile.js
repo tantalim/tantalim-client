@@ -379,7 +379,7 @@ angular.module('tantalim.common')
                 }
 
                 newInstance.addChildModel = function (childModelName, childDataSet) {
-                    $log.debug('addChildModel ', childModelName, childDataSet);
+                    //$log.debug('addChildModel ', childModelName, childDataSet);
                     var smartSet = new SmartNodeSet(modelMap[childModelName], childDataSet, newInstance, nodeSet.depth + 1);
                     newInstance.childModels[childModelName] = smartSet;
                 };
@@ -487,7 +487,7 @@ angular.module('tantalim.common')
                         return !_.isEmpty(dirtyRow);
                     },
                     delete: function (index) {
-                        console.info('deleting on set with index =', index);
+                        // console.info('deleting on set with index =', index);
                         var row = this.rows[index];
                         if (row.state !== STATE.INSERTED) {
                             // Only delete previously saved records
@@ -495,6 +495,7 @@ angular.module('tantalim.common')
                             row.updateParent();
                         }
                         this.rows.splice(index, 1);
+                        self.clearCurrentChildren(this.model.modelName);
                     },
                     deleteEnabled: function() {
                         return this.getInstance() !== null;

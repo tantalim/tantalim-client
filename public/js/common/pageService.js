@@ -3,7 +3,7 @@
 
 angular.module('tantalim.common')
     .factory('PageService', function ($http) {
-        return {
+        var self = {
             readModelData: function (modelName, filterString, pageNumber) {
                 var url = '/data/' + modelName + '?';
                 if (filterString) {
@@ -15,7 +15,11 @@ angular.module('tantalim.common')
                     }
                     url += 'page=' + pageNumber;
                 }
+                return self.readUrl(url);
+            },
+            readUrl: function (url) {
                 return $http.get(url);
             }
         };
+        return self;
     });
