@@ -590,6 +590,7 @@ angular.module('tantalim.desktop')
                 hover: {},
                 selectRow: function(row) {
                     self.selectedRows.start = self.selectedRows.end = row;
+                    self.fixSelectedRows();
                 },
                 rowIsSelected: function (row) {
                     return self.selectedRows.between(row);
