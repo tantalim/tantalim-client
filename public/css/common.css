@@ -192,6 +192,7 @@ table.tnt-grid th .help {
     border: 1px dotted #FFF;
     margin: 0;
     padding: 2px 2px 10px 2px;
+    min-height: 73px;
 }
 
 .form-group:hover {
@@ -209,3 +210,10 @@ table.tnt-grid th .help {
     min-width: 260px;
 }
 
+
+
+.tnt-grid {
+    /*background-color: #447fc8;*/
+    /*width: 100px;*/
+    /*height: 100px;*/
+}

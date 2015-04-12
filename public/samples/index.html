@@ -44,9 +44,20 @@
         </div>
 
         <div>
+            <h2>Table Grid</h2>
+
+            <tnt-grid current="SmartPage.getSection('BuildTable')">
+                <tnt-columns>
+                    <tnt-column>Name</tnt-column>
+                    <tnt-column>Age</tnt-column>
+                </tnt-columns>
+            </tnt-grid>
+        </div>
+
+        <div>
             <h2>Sections</h2>
 
-            <tnt-section id="BuildTable" current="SmartPage.getSection('BuildTable', 0)">
+            <tnt-section id="BuildTable" current="SmartPage.getSection('BuildTable')">
                 <div class="page-header">
                     <h1>Build Table</h1>
                 </div>
@@ -64,7 +75,7 @@
                     </tnt-textbox>
                 </tnt-form>
 
-                <tnt-section id="ChildSection1" title="Child Section" current="SmartPage.getSection('BuildTable', 0)">
+                <tnt-section id="ChildSection1" title="Child Section" current="SmartPage.getSection('BuildTable')">
                     <title>Title2</title>
                     <tnt-form>
                         <tnt-form-navigation>
@@ -220,10 +231,6 @@
                     </div>
                 </div>
             </form>
-        </div>
-
-        <div>
-
         </div>
     </div>
 </section>

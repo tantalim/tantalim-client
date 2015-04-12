@@ -47,3 +47,34 @@ button.ui-select-close {
   top: 7px;
   right: 7px;
 }
+
+.tnt-select label {
+  display: none;
+}
+
+.tnt-select .dropdown {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.tnt-select input.form-control {
+  height: 100%;
+  padding: 5px;
+  border: 0;
+  border-radius: 0;
+}
+
+.tnt-select .ui-select-match {
+  height: 100%;
+  padding: 5px;
+  border: 0;
+  border-radius: 0;
+}
+
+.tnt-select button.ui-select-close {
+  top: 3px;
+  right: 3px;
+}
