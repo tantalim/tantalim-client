@@ -50,9 +50,9 @@ div.smart-select {
 }
 
 #clipboard {
-    position: absolute;
-    top: -100px;
-    left: -100px;
+    position: fixed;
+    top: 100px;
+    right: -100px;
     height: 1px;
     width: 1px;
     z-index: -1;
