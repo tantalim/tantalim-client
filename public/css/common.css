@@ -167,6 +167,11 @@ body.desktop {
     margin-right: auto
 }
 
+.childSection nav ul .divider {
+    padding-left: 10px;
+    cursor: default;
+}
+
 .sectionContent {
     clear: both;
 }
@@ -216,4 +221,8 @@ table.tnt-grid th .help {
     /*background-color: #447fc8;*/
     /*width: 100px;*/
     /*height: 100px;*/
+}
+
+textarea.form-control {
+    font-family: monospace;
 }

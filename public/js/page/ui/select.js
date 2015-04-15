@@ -223,7 +223,7 @@ angular.module('tantalim.desktop')
         return function (scope, element) {
             element.bind('keydown keypress', function (event) {
                 scope.$apply(function () {
-                    var processed = scope.$select.keydown(event.which, scope.current);
+                    var processed = scope.$select.keydown(event.which);
                     if (processed) {
                         event.preventDefault();
                     }

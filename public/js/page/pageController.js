@@ -7,8 +7,27 @@ angular.module('tantalim.desktop')
     .controller('PageController',
     function ($scope, $log, $location, PageDefinition, PageService, ModelCursor, keyboardManager, ModelSaver, $window, $http, Logger) {
 
+
         $scope.buttons = $window.buttons;
-        $scope.$http = $http;
+        /**
+         * buttonScope is used in section.scala.html
+         */
+        $scope.buttonScope = {
+            // Deprecated
+            PageService: PageService,
+            // Deprecated
+            $http: $http,
+            Http: $http,
+            Logger: Logger,
+            Server: {
+                read: PageService.readModelData
+            }
+        };
+
+        $scope.showDevelopmentTools = false;
+        keyboardManager.bind('meta+alt+t', function () {
+            $scope.showDevelopmentTools = !$scope.showDevelopmentTools;
+        });
 
         /**
          * You can only edit a single cell in a single section at a time so this is a global var (page level at least)
@@ -83,6 +102,7 @@ angular.module('tantalim.desktop')
                         self.topSection.fixSelectedRows();
                         self.showLoadingScreen = false;
                     }
+
                     var topModel = self.topSection.model;
                     if (topModel.customUrlSource) {
                         PageService.readUrl(topModel.customUrlSource).then(processResults);
@@ -294,7 +314,7 @@ angular.module('tantalim.desktop')
                 unbindHotKeys: function () {
                     self.bound = false;
                     var ctrl = 'meta';
-                    var sectionKeys = ['up','down','right','left','shift+tab','shift+down',ctrl + '+c',ctrl + '+v',ctrl + '+t',ctrl + '+d',ctrl + '+i'];
+                    var sectionKeys = ['up', 'down', 'right', 'left', 'shift+tab', 'shift+down', ctrl + '+c', ctrl + '+v', ctrl + '+t', ctrl + '+d', ctrl + '+i'];
                     angular.forEach(sectionKeys, function (key) {
                         keyboardManager.unbind(key);
                     });
@@ -351,7 +371,7 @@ angular.module('tantalim.desktop')
                 selectedRows: new Selector(),
                 selectedColumns: new Selector(),
                 hover: {},
-                selectRow: function(row) {
+                selectRow: function (row) {
                     self.selectedRows.start = self.selectedRows.end = row;
                     self.fixSelectedRows();
                 },

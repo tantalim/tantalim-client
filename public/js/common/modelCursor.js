@@ -39,7 +39,7 @@ angular.module('tantalim.common')
              * @param nodeSet
              */
             var SmartNodeInstance = function (model, row, nodeSet) {
-                $log.debug('Adding SmartNodeInstance id:%s for model `%s` onto set ', row.id, model.name, nodeSet);
+                //$log.debug('Adding SmartNodeInstance id:%s for model `%s` onto set ', row.id, model.name, nodeSet);
                 var defaults = {
                     _type: 'SmartNodeInstance',
                     /**
@@ -58,6 +58,13 @@ angular.module('tantalim.common')
                      * map of SmartNodeInstances representing the children of this node
                      */
                     childModels: {},
+                    getChild: function(name) {
+                        var childModel = this.childModels[name];
+                        if (childModel === undefined) {
+                            console.warn('Child model ' + name + ' doesn\'t exist.');
+                        }
+                        return childModel;
+                    },
                     state: STATE.NO_CHANGE,
 
                     delete: function () {
@@ -80,7 +87,7 @@ angular.module('tantalim.common')
                         this.update(fieldName, newValue);
                     },
                     getValue: function (fieldName) {
-                        console.info('finding value for fieldName: ', fieldName, this.data);
+                        //console.info('finding value for fieldName: ', fieldName, this.data);
 
                         if (this.data.hasOwnProperty(fieldName)) {
                             return this.data[fieldName];
@@ -93,7 +100,7 @@ angular.module('tantalim.common')
                         // We could consider checking child models first before dying
                         throw new Error('Cannot find field called ' + fieldName);
                     },
-                    update: function (fieldName, newValue, force) {
+                    setValue: function (fieldName, newValue, force) {
                         console.info('update ' + fieldName + ' to ' + newValue);
                         force = force || false;
                         var field = modelMap[nodeSet.model.modelName].fields[fieldName];
@@ -117,6 +124,10 @@ angular.module('tantalim.common')
                             this.updateParent();
                         }
                     },
+                    update: function (fieldName, newValue, force) {
+                        console.warn('update is deprecated. Use setValue');
+                        this.setValue(fieldName, newValue, force);
+                    },
                     updateParent: function () {
                         if (!this.nodeSet) return;
                         var parent = this.nodeSet.parentInstance;
@@ -137,37 +148,28 @@ angular.module('tantalim.common')
                 newInstance.nodeSet = nodeSet;
 
                 function setFieldDefault(field, row) {
-                    if (!field.fieldDefault) {
-                        return;
-                    }
-                    $log.debug('Defaulting field ', field);
+                    var defaultValue;
 
-                    var DEFAULT_TYPE = {
-                        CONSTANT: "Constant",
-                        FIELD: "Field",
-                        FXN: "Fxn"
-                    };
+                    if (field.valueDefault !== null) {
+                        console.info(field.name + field.valueDefault);
 
-                    switch (field.fieldDefault.type) {
-                        case DEFAULT_TYPE.FIELD:
-                            row.data[field.name] = row.getValue(field.fieldDefault.value);
-                            break;
-                        case DEFAULT_TYPE.FXN:
-                            row.data[field.name] = eval(field.fieldDefault.value);
-                            break;
-                        case DEFAULT_TYPE.CONSTANT:
-                            var value = field.fieldDefault.value
-                            switch (field.dataType) {
-                                case "Boolean":
-                                    value = (value === 'true');
-                                    break;
-                            }
-                            row.data[field.name] = value;
-                            break;
-                        default:
-                            console.error("Failed to match fieldDefault.type on ", field);
+                        defaultValue = field.valueDefault;
+                        switch (field.dataType) {
+                            case "Boolean":
+                                defaultValue = (defaultValue === 'true');
+                                break;
+                        }
                     }
-                    $log.debug('defaulted ' + field.name + ' to ' + row.data[field.name] + ' of type ' + typeof row.data[field.name]);
+                    if (field.fieldDefault !== null) {
+                        defaultValue = row.getValue(field.fieldDefault);
+                    }
+                    if (field.functionDefault !== null) {
+                        defaultValue = eval(field.functionDefault);
+                    }
+                    if (defaultValue !== undefined) {
+                        $log.debug('defaulted ' + field.name + ' to ' + defaultValue + ' of type ' + typeof defaultValue);
+                        row.data[field.name] = defaultValue;
+                    }
                 }
 
                 if (row.id === null) {
@@ -279,6 +281,23 @@ angular.module('tantalim.common')
                             return row.id === id;
                         });
                     },
+                    find: function(matcher) {
+                        return _.find(this.rows, matcher);
+                    },
+                    max: function(fieldName) {
+                        var value = _.max(this.rows, function(row) {
+                            return Number(row.data[fieldName]);
+                        });
+                        if (value) return Number(value.data[fieldName]);
+                        else return undefined;
+                    },
+                    min: function(fieldName) {
+                        var value = _.min(this.rows, function(row) {
+                            return Number(row.data[fieldName]);
+                        });
+                        if (value) return Number(value.data[fieldName]);
+                        else return undefined;
+                    },
                     isDirty: function() {
                         if (this.deleted && this.deleted.length > 0) return true;
 
@@ -350,10 +369,10 @@ angular.module('tantalim.common')
                                     break;
                             }
                             if (row.childModels && modifiedRow && modifiedRow.children) {
-                                console.info(row.childModels);
-                                console.info(modifiedRow);
+                                //console.info(row.childModels);
+                                //console.info(modifiedRow);
                                 _.forEach(row.childModels, function (child, childName) {
-                                    console.info(childName);
+                                    //console.info(childName);
                                     var childDataFromServer = modifiedRow.children[childName];
                                     if (childDataFromServer) {
                                         row.childModels[childName].reloadFromServer(childDataFromServer);
@@ -370,9 +389,9 @@ angular.module('tantalim.common')
                 newSet.model.modelName = model.name;
                 newSet.model.orderBy = model.orderBy;
                 newSet.parentInstance = parentInstance;
-                newSet.insert = function () {
+                newSet.insert = function (values) {
                     $log.debug('Inserting new instance with model');
-                    var smartInstance = new SmartNodeInstance(model, {}, newSet);
+                    var smartInstance = new SmartNodeInstance(model, {data: values || {}}, newSet);
                     newSet.rows.push(smartInstance);
                     newSet.index = newSet.rows.length - 1;
                     smartInstance.updateParent();
@@ -411,8 +430,8 @@ angular.module('tantalim.common')
                 },
                 getCurrentSet: function (modelName) {
                     if (!_.isEmpty(self.current) && !self.current[modelName]) {
-                        console.warn('getCurrentSet is empty', modelName);
-                        console.warn('current = ', self.current);
+                        //console.warn('getCurrentSet is empty', modelName);
+                        //console.warn('current = ', self.current);
                     }
                     return self.current[modelName];
                 },

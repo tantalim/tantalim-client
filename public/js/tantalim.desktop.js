@@ -244,8 +244,27 @@ angular.module('tantalim.desktop')
     .controller('PageController',
     function ($scope, $log, $location, PageDefinition, PageService, ModelCursor, keyboardManager, ModelSaver, $window, $http, Logger) {
 
+
         $scope.buttons = $window.buttons;
-        $scope.$http = $http;
+        /**
+         * buttonScope is used in section.scala.html
+         */
+        $scope.buttonScope = {
+            // Deprecated
+            PageService: PageService,
+            // Deprecated
+            $http: $http,
+            Http: $http,
+            Logger: Logger,
+            Server: {
+                read: PageService.readModelData
+            }
+        };
+
+        $scope.showDevelopmentTools = false;
+        keyboardManager.bind('meta+alt+t', function () {
+            $scope.showDevelopmentTools = !$scope.showDevelopmentTools;
+        });
 
         /**
          * You can only edit a single cell in a single section at a time so this is a global var (page level at least)
@@ -320,6 +339,7 @@ angular.module('tantalim.desktop')
                         self.topSection.fixSelectedRows();
                         self.showLoadingScreen = false;
                     }
+
                     var topModel = self.topSection.model;
                     if (topModel.customUrlSource) {
                         PageService.readUrl(topModel.customUrlSource).then(processResults);
@@ -531,7 +551,7 @@ angular.module('tantalim.desktop')
                 unbindHotKeys: function () {
                     self.bound = false;
                     var ctrl = 'meta';
-                    var sectionKeys = ['up','down','right','left','shift+tab','shift+down',ctrl + '+c',ctrl + '+v',ctrl + '+t',ctrl + '+d',ctrl + '+i'];
+                    var sectionKeys = ['up', 'down', 'right', 'left', 'shift+tab', 'shift+down', ctrl + '+c', ctrl + '+v', ctrl + '+t', ctrl + '+d', ctrl + '+i'];
                     angular.forEach(sectionKeys, function (key) {
                         keyboardManager.unbind(key);
                     });
@@ -588,7 +608,7 @@ angular.module('tantalim.desktop')
                 selectedRows: new Selector(),
                 selectedColumns: new Selector(),
                 hover: {},
-                selectRow: function(row) {
+                selectRow: function (row) {
                     self.selectedRows.start = self.selectedRows.end = row;
                     self.fixSelectedRows();
                 },
@@ -1252,7 +1272,7 @@ angular.module('tantalim.desktop')
         return function (scope, element) {
             element.bind('keydown keypress', function (event) {
                 scope.$apply(function () {
-                    var processed = scope.$select.keydown(event.which, scope.current);
+                    var processed = scope.$select.keydown(event.which);
                     if (processed) {
                         event.preventDefault();
                     }
@@ -1280,6 +1300,71 @@ angular.module('tantalim.desktop')
     })
 ;
 
+// Source: public/js/page/ui/textarea.js
+angular.module('tantalim.desktop')
+    .directive('tntTextarea', function () {
+        return {
+            restrict: 'E',
+            controllerAs: '$textarea',
+            controller: function ($scope, $attrs) {
+
+                var ctrl = this;
+                ctrl.value = null;
+                ctrl.label = $attrs.label;
+                ctrl.placeholder = $attrs.placeholder;
+
+                var fieldName = $attrs.name;
+                ctrl.id = fieldName;
+                ctrl.name = fieldName;
+
+                ctrl.change = function () {
+                    console.info('update' + fieldName);
+                    $scope.currentInstance.update(fieldName);
+                };
+                ctrl.disabled = function () {
+                    // This section still needs some work
+                    if ($attrs.disabled === 'true') return true;
+                    var notUpdateable = $attrs.updateable === 'false';
+                    return $scope.state !== 'INSERTED' && notUpdateable;
+                };
+                ctrl.required = function () {
+                    if ($attrs.required === 'true') return true;
+                    return false;
+                };
+                ctrl.blur = function () {
+                    if ($attrs.blurFunction) {
+                        console.info('blur not implemented yet');
+                        //field.blurFunction
+                    }
+                };
+            },
+
+            scope: {
+                currentInstance: '='
+            },
+            transclude: true,
+            template: '<span ng-transclude></span>' +
+            '<label class="control-label" for="{{$textarea.id}}">{{$textarea.label}}</label>' +
+            '<textarea class="form-control" id="{{$textarea.id}}" name="{{$textarea.name}}" ' +
+            'data-ng-model="currentInstance.data[$textarea.name]" ng-focus=""' +
+            'ng-change="$textarea.change()"' +
+            'ng-blur="$textarea.blur()"' +
+            'ng-disabled="$textarea.disabled()"' +
+            'ng-required="$textarea.required()"' +
+            'placeholder="{{$textarea.placeholder}}"></textarea>'
+        };
+    })
+    .directive('selectOnClick', function () {
+        return {
+            restrict: 'A',
+            link: function (scope, element) {
+                element.on('click', function () {
+                    this.select();
+                });
+            }
+        };
+    })
+;
 // Source: public/js/page/ui/textbox.js
 angular.module('tantalim.desktop')
     .directive('tntTextbox', function () {
@@ -1481,7 +1566,7 @@ angular.module('tantalim.common')
              * @param nodeSet
              */
             var SmartNodeInstance = function (model, row, nodeSet) {
-                $log.debug('Adding SmartNodeInstance id:%s for model `%s` onto set ', row.id, model.name, nodeSet);
+                //$log.debug('Adding SmartNodeInstance id:%s for model `%s` onto set ', row.id, model.name, nodeSet);
                 var defaults = {
                     _type: 'SmartNodeInstance',
                     /**
@@ -1500,6 +1585,13 @@ angular.module('tantalim.common')
                      * map of SmartNodeInstances representing the children of this node
                      */
                     childModels: {},
+                    getChild: function(name) {
+                        var childModel = this.childModels[name];
+                        if (childModel === undefined) {
+                            console.warn('Child model ' + name + ' doesn\'t exist.');
+                        }
+                        return childModel;
+                    },
                     state: STATE.NO_CHANGE,
 
                     delete: function () {
@@ -1522,7 +1614,7 @@ angular.module('tantalim.common')
                         this.update(fieldName, newValue);
                     },
                     getValue: function (fieldName) {
-                        console.info('finding value for fieldName: ', fieldName, this.data);
+                        //console.info('finding value for fieldName: ', fieldName, this.data);
 
                         if (this.data.hasOwnProperty(fieldName)) {
                             return this.data[fieldName];
@@ -1534,6 +1626,9 @@ angular.module('tantalim.common')
 
                         // We could consider checking child models first before dying
                         throw new Error('Cannot find field called ' + fieldName);
+                    },
+                    setValue: function () {
+
                     },
                     update: function (fieldName, newValue, force) {
                         console.info('update ' + fieldName + ' to ' + newValue);
@@ -1579,37 +1674,28 @@ angular.module('tantalim.common')
                 newInstance.nodeSet = nodeSet;
 
                 function setFieldDefault(field, row) {
-                    if (!field.fieldDefault) {
-                        return;
-                    }
-                    $log.debug('Defaulting field ', field);
+                    var defaultValue;
 
-                    var DEFAULT_TYPE = {
-                        CONSTANT: "Constant",
-                        FIELD: "Field",
-                        FXN: "Fxn"
-                    };
+                    if (field.valueDefault !== null) {
+                        console.info(field.name + field.valueDefault);
 
-                    switch (field.fieldDefault.type) {
-                        case DEFAULT_TYPE.FIELD:
-                            row.data[field.name] = row.getValue(field.fieldDefault.value);
-                            break;
-                        case DEFAULT_TYPE.FXN:
-                            row.data[field.name] = eval(field.fieldDefault.value);
-                            break;
-                        case DEFAULT_TYPE.CONSTANT:
-                            var value = field.fieldDefault.value
-                            switch (field.dataType) {
-                                case "Boolean":
-                                    value = (value === 'true');
-                                    break;
-                            }
-                            row.data[field.name] = value;
-                            break;
-                        default:
-                            console.error("Failed to match fieldDefault.type on ", field);
+                        defaultValue = field.valueDefault;
+                        switch (field.dataType) {
+                            case "Boolean":
+                                defaultValue = (defaultValue === 'true');
+                                break;
+                        }
                     }
-                    $log.debug('defaulted ' + field.name + ' to ' + row.data[field.name] + ' of type ' + typeof row.data[field.name]);
+                    if (field.fieldDefault !== null) {
+                        defaultValue = row.getValue(field.fieldDefault);
+                    }
+                    if (field.functionDefault !== null) {
+                        defaultValue = eval(field.functionDefault);
+                    }
+                    if (defaultValue !== undefined) {
+                        $log.debug('defaulted ' + field.name + ' to ' + defaultValue + ' of type ' + typeof defaultValue);
+                        row.data[field.name] = defaultValue;
+                    }
                 }
 
                 if (row.id === null) {
@@ -1721,6 +1807,23 @@ angular.module('tantalim.common')
                             return row.id === id;
                         });
                     },
+                    find: function(matcher) {
+                        return _.find(this.rows, matcher);
+                    },
+                    max: function(fieldName) {
+                        var value = _.max(this.rows, function(row) {
+                            return Number(row.data[fieldName]);
+                        });
+                        if (value) return Number(value.data[fieldName]);
+                        else return undefined;
+                    },
+                    min: function(fieldName) {
+                        var value = _.min(this.rows, function(row) {
+                            return Number(row.data[fieldName]);
+                        });
+                        if (value) return Number(value.data[fieldName]);
+                        else return undefined;
+                    },
                     isDirty: function() {
                         if (this.deleted && this.deleted.length > 0) return true;
 
@@ -1792,10 +1895,10 @@ angular.module('tantalim.common')
                                     break;
                             }
                             if (row.childModels && modifiedRow && modifiedRow.children) {
-                                console.info(row.childModels);
-                                console.info(modifiedRow);
+                                //console.info(row.childModels);
+                                //console.info(modifiedRow);
                                 _.forEach(row.childModels, function (child, childName) {
-                                    console.info(childName);
+                                    //console.info(childName);
                                     var childDataFromServer = modifiedRow.children[childName];
                                     if (childDataFromServer) {
                                         row.childModels[childName].reloadFromServer(childDataFromServer);
@@ -1812,9 +1915,9 @@ angular.module('tantalim.common')
                 newSet.model.modelName = model.name;
                 newSet.model.orderBy = model.orderBy;
                 newSet.parentInstance = parentInstance;
-                newSet.insert = function () {
+                newSet.insert = function (values) {
                     $log.debug('Inserting new instance with model');
-                    var smartInstance = new SmartNodeInstance(model, {}, newSet);
+                    var smartInstance = new SmartNodeInstance(model, {data: values || {}}, newSet);
                     newSet.rows.push(smartInstance);
                     newSet.index = newSet.rows.length - 1;
                     smartInstance.updateParent();
@@ -1853,8 +1956,8 @@ angular.module('tantalim.common')
                 },
                 getCurrentSet: function (modelName) {
                     if (!_.isEmpty(self.current) && !self.current[modelName]) {
-                        console.warn('getCurrentSet is empty', modelName);
-                        console.warn('current = ', self.current);
+                        //console.warn('getCurrentSet is empty', modelName);
+                        //console.warn('current = ', self.current);
                     }
                     return self.current[modelName];
                 },
