@@ -284,19 +284,28 @@ angular.module('tantalim.common')
                     find: function(matcher) {
                         return _.find(this.rows, matcher);
                     },
-                    max: function(fieldName) {
+                    isEmpty: function() {
+                        return !(this.rows.length > 0);
+                    },
+                    max: function(fieldName, lowest) {
+                        if (this.isEmpty()) {
+                            return lowest;
+                        }
                         var value = _.max(this.rows, function(row) {
                             return Number(row.data[fieldName]);
                         });
                         if (value) return Number(value.data[fieldName]);
-                        else return undefined;
+                        else return lowest;
                     },
-                    min: function(fieldName) {
+                    min: function(fieldName, highest) {
+                        if (this.isEmpty()) {
+                            return highest;
+                        }
                         var value = _.min(this.rows, function(row) {
                             return Number(row.data[fieldName]);
                         });
                         if (value) return Number(value.data[fieldName]);
-                        else return undefined;
+                        else return highest;
                     },
                     isDirty: function() {
                         if (this.deleted && this.deleted.length > 0) return true;

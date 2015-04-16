@@ -830,7 +830,13 @@ angular.module('tantalim.desktop')
                 filter = filter.replace('[' + key + ']', row.data[key]);
                 filter = filter.replace('${' + key + '}', row.data[key]);
             });
-            $window.location.href = '/page/' + targetPage + '/?filter=' + filter;
+            var openInNew = true;
+            if (openInNew) {
+                $window.open('/page/' + targetPage + '/?filter=' + filter);
+            } else {
+                // TODO Figure out if the ctrl button is down...maybe in a directive with event
+                $window.location.href = '/page/' + targetPage + '/?filter=' + filter;
+            }
         };
 
         var page = new SmartPage(PageDefinition.page);
@@ -1627,10 +1633,7 @@ angular.module('tantalim.common')
                         // We could consider checking child models first before dying
                         throw new Error('Cannot find field called ' + fieldName);
                     },
-                    setValue: function () {
-
-                    },
-                    update: function (fieldName, newValue, force) {
+                    setValue: function (fieldName, newValue, force) {
                         console.info('update ' + fieldName + ' to ' + newValue);
                         force = force || false;
                         var field = modelMap[nodeSet.model.modelName].fields[fieldName];
@@ -1653,6 +1656,10 @@ angular.module('tantalim.common')
                             this.state = STATE.UPDATED;
                             this.updateParent();
                         }
+                    },
+                    update: function (fieldName, newValue, force) {
+                        console.warn('update is deprecated. Use setValue');
+                        this.setValue(fieldName, newValue, force);
                     },
                     updateParent: function () {
                         if (!this.nodeSet) return;
@@ -1810,19 +1817,28 @@ angular.module('tantalim.common')
                     find: function(matcher) {
                         return _.find(this.rows, matcher);
                     },
-                    max: function(fieldName) {
+                    isEmpty: function() {
+                        return !(this.rows.length > 0);
+                    },
+                    max: function(fieldName, lowest) {
+                        if (this.isEmpty()) {
+                            return lowest;
+                        }
                         var value = _.max(this.rows, function(row) {
                             return Number(row.data[fieldName]);
                         });
                         if (value) return Number(value.data[fieldName]);
-                        else return undefined;
+                        else return lowest;
                     },
-                    min: function(fieldName) {
+                    min: function(fieldName, highest) {
+                        if (this.isEmpty()) {
+                            return highest;
+                        }
                         var value = _.min(this.rows, function(row) {
                             return Number(row.data[fieldName]);
                         });
                         if (value) return Number(value.data[fieldName]);
-                        else return undefined;
+                        else return highest;
                     },
                     isDirty: function() {
                         if (this.deleted && this.deleted.length > 0) return true;
