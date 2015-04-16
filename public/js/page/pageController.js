@@ -593,7 +593,13 @@ angular.module('tantalim.desktop')
                 filter = filter.replace('[' + key + ']', row.data[key]);
                 filter = filter.replace('${' + key + '}', row.data[key]);
             });
-            $window.location.href = '/page/' + targetPage + '/?filter=' + filter;
+            var openInNew = true;
+            if (openInNew) {
+                $window.open('/page/' + targetPage + '/?filter=' + filter);
+            } else {
+                // TODO Figure out if the ctrl button is down...maybe in a directive with event
+                $window.location.href = '/page/' + targetPage + '/?filter=' + filter;
+            }
         };
 
         var page = new SmartPage(PageDefinition.page);
