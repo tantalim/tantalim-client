@@ -86,11 +86,20 @@ angular.module('tantalim.common')
                         console.info("Setting ", fieldName, newValue);
                         this.update(fieldName, newValue);
                     },
+                    getField: function(fieldName) {
+                        var model = modelMap[this.nodeSet.model.modelName];
+                        return model.fields[fieldName];
+                    },
                     getValue: function (fieldName) {
                         //console.info('finding value for fieldName: ', fieldName, this.data);
 
                         if (this.data.hasOwnProperty(fieldName)) {
                             return this.data[fieldName];
+                        }
+
+                        if (this.getField(fieldName)) {
+                            // This model has the field but it's empty
+                            return null;
                         }
 
                         if (this.nodeSet.parentInstance) {
